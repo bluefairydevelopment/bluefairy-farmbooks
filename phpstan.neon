@@ -1,0 +1,14 @@
+parameters:
+    level: 6
+    paths:
+        - includes
+    scanFiles:
+        - bluefairy-farmbooks-lite.php
+    bootstrapFiles:
+        - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+    excludePaths:
+        - vendor/
+    treatPhpDocTypesAsCertain: false
+
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon

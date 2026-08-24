@@ -1,0 +1,40 @@
+{
+  "name": "bluefairy/farmbooks",
+  "description": "BlueFairy FarmBooks Lite — Schedule F farm income and expense tracking for WordPress",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    {
+      "name": "Blue Fairy Development",
+      "homepage": "https://bluefairydevelopment.com"
+    }
+  ],
+  "require": {
+    "php": ">=8.1"
+  },
+  "require-dev": {
+    "php-stubs/wordpress-stubs": "^6.7",
+    "phpstan/phpstan": "^2",
+    "phpunit/phpunit": "^11.0",
+    "squizlabs/php_codesniffer": "^3.11",
+    "szepeviktor/phpstan-wordpress": "^2",
+    "wp-coding-standards/wpcs": "^3.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "BlueFairy\\FarmBooks\\": "includes/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "BlueFairy\\FarmBooks\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    },
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
+}
