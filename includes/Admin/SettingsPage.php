@@ -209,7 +209,7 @@ class SettingsPage {
 		);
 		$this->settings->set( 'farm_name', $farm_name );
 
-		$fiscal_year_start_raw = (string) ( $_POST['bffb_fiscal_year_start'] ?? '1' );
+		$fiscal_year_start_raw = sanitize_key( wp_unslash( $_POST['bffb_fiscal_year_start'] ?? '1' ) );
 		$fiscal_year_start     = in_array( $fiscal_year_start_raw, array_map( 'strval', range( 1, 12 ) ), true )
 			? $fiscal_year_start_raw
 			: '1';

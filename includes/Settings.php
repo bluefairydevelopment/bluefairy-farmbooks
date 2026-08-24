@@ -45,10 +45,10 @@ class Settings {
 
 		$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$wpdb->prepare(
-				'INSERT INTO `%1s` (`option_key`, `option_value`, `autoload`)
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"INSERT INTO `{$table}` (`option_key`, `option_value`, `autoload`)
                  VALUES (%s, %s, 1)
-                 ON DUPLICATE KEY UPDATE `option_value` = VALUES(`option_value`)', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				$table,
+                 ON DUPLICATE KEY UPDATE `option_value` = VALUES(`option_value`)",
 				$key,
 				$string_value
 			)
@@ -87,10 +87,8 @@ class Settings {
 
 		$table = $wpdb->prefix . 'bffb_settings';
 		$rows  = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->prepare(
-				'SELECT `option_key`, `option_value` FROM `%1s` LIMIT 500', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				$table
-			),
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			"SELECT `option_key`, `option_value` FROM `{$table}` LIMIT 500",
 			ARRAY_A
 		);
 

@@ -166,7 +166,7 @@ class TransactionEditPage {
 
 		$id       = isset( $_POST['id'] ) ? (int) $_POST['id'] : 0;
 		$raw_date = sanitize_text_field( wp_unslash( $_POST['date'] ?? '' ) );
-		$amount   = (float) ( $_POST['amount'] ?? 0 );
+		$amount   = (float) wp_unslash( $_POST['amount'] ?? '0' );
 		$raw_type = sanitize_key( $_POST['type'] ?? '' );
 		$type     = in_array( $raw_type, array( 'income', 'expense' ), true ) ? $raw_type : 'expense';
 

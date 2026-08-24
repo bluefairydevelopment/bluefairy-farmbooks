@@ -125,8 +125,8 @@ class Installer {
 		global $wpdb;
 
 		$table    = $wpdb->prefix . 'bffb_accounts';
-		$existing = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->prepare( 'SELECT COUNT(*) FROM `%1s`', $table ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$existing = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			"SELECT COUNT(*) FROM `{$table}`"
 		);
 
 		if ( (int) $existing > 0 ) {
@@ -199,8 +199,8 @@ class Installer {
 		global $wpdb;
 
 		$cat_table = $wpdb->prefix . 'bffb_categories';
-		$existing  = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->prepare( 'SELECT COUNT(*) FROM `%1s`', $cat_table ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$existing  = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			"SELECT COUNT(*) FROM `{$cat_table}`"
 		);
 
 		if ( (int) $existing > 0 ) {
@@ -218,8 +218,8 @@ class Installer {
 		$get_account_id = function ( string $name ) use ( $wpdb, $acc_table ): ?int {
 			$id = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 				$wpdb->prepare(
-					'SELECT `id` FROM `%1s` WHERE `name` = %s LIMIT 1', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-					$acc_table,
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"SELECT `id` FROM `{$acc_table}` WHERE `name` = %s LIMIT 1",
 					$name
 				)
 			);
@@ -326,8 +326,8 @@ class Installer {
 		foreach ( $defaults as $key => $value ) {
 			$existing = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 				$wpdb->prepare(
-					'SELECT COUNT(*) FROM `%1s` WHERE `option_key` = %s LIMIT 1', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-					$table,
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"SELECT COUNT(*) FROM `{$table}` WHERE `option_key` = %s LIMIT 1",
 					$key
 				)
 			);

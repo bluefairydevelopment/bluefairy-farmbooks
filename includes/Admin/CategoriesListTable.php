@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace BlueFairy\FarmBooks\Admin;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( ! class_exists( 'WP_List_Table' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 }
@@ -70,10 +74,8 @@ class CategoriesListTable extends \WP_List_Table {
 			: 'sort_order';
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$order = isset( $_GET['order'] ) && in_array( strtoupper( $_GET['order'] ), $allowed_order, true )
-            // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			? strtoupper( $_GET['order'] )
-			: 'ASC';
+		$order_raw = isset( $_GET['order'] ) ? strtoupper( sanitize_key( wp_unslash( $_GET['order'] ) ) ) : '';
+		$order     = in_array( $order_raw, $allowed_order, true ) ? $order_raw : 'ASC';
 
 		$table = $wpdb->prefix . 'bffb_categories';
 

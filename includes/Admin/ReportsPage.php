@@ -221,7 +221,7 @@ class ReportsPage {
 			: __( 'Expense List', 'bluefairy-farmbooks-lite' );
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$paged    = max( 1, (int) ( $_GET['paged'] ?? 1 ) );
+		$paged    = max( 1, (int) wp_unslash( $_GET['paged'] ?? '1' ) );
 		$per_page = 50;
 		$offset   = ( $paged - 1 ) * $per_page;
 
