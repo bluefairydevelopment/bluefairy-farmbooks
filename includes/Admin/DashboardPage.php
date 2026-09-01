@@ -305,13 +305,7 @@ class DashboardPage {
 	}
 
 	private function get_fiscal_year_start_date(): string {
-		$fiscal_month  = max( 1, min( 12, (int) $this->settings->get( 'fiscal_year_start', 1 ) ) );
-		$current_year  = (int) wp_date( 'Y' );
-		$current_month = (int) wp_date( 'n' );
-
-		$year = ( $current_month >= $fiscal_month ) ? $current_year : $current_year - 1;
-
-		return sprintf( '%04d-%02d-01', $year, $fiscal_month );
+		return $this->settings->fiscal_year_start_date();
 	}
 
 	private function render_stat_widget( string $label, string $value, string $color ): void {

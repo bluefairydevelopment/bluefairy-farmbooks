@@ -115,4 +115,23 @@ class Settings {
 
 		return $this->cache;
 	}
+
+	/**
+	 * First day of the current fiscal year, as Y-m-d.
+	 *
+	 * Lives here because the fiscal_year_start setting lives here. Free's YTD
+	 * stat widgets and Pro's YTD charts render on the same screen, inches
+	 * apart, and each used to compute this window from its own private copy of
+	 * the same nine lines - so a fix to one silently left the other covering a
+	 * different period, with neither number labelled with its window.
+	 */
+	public function fiscal_year_start_date(): string {
+		$fiscal_month  = max( 1, min( 12, (int) $this->get( 'fiscal_year_start', 1 ) ) );
+		$current_year  = (int) wp_date( 'Y' );
+		$current_month = (int) wp_date( 'n' );
+
+		$year = ( $current_month >= $fiscal_month ) ? $current_year : $current_year - 1;
+
+		return sprintf( '%04d-%02d-01', $year, $fiscal_month );
+	}
 }

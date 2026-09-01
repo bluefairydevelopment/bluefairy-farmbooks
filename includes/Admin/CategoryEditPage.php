@@ -49,6 +49,9 @@ class CategoryEditPage {
 		);
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
+		// Markup only: the return value is passed through wp_kses_post(),
+		// which strips input, select, option and textarea. Use the
+		// bffb_category_extra_fields action below to add an actual field.
 		$extra_fields = apply_filters( 'bffb_category_form_fields', array(), $category );
 
 		$page_title = $id > 0
@@ -68,7 +71,7 @@ class CategoryEditPage {
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="bffb_save_category">
 				<input type="hidden" name="id" value="<?php echo esc_attr( (string) $id ); ?>">
-				<?php wp_nonce_field( 'bffb_save_category', 'bffbp_category_nonce' ); ?>
+				<?php wp_nonce_field( 'bffb_save_category', 'bffb_category_nonce' ); ?>
 
 				<table class="form-table" role="presentation">
 					<tr>
@@ -130,6 +133,22 @@ class CategoryEditPage {
 					<?php echo wp_kses_post( $field ); ?>
 				<?php endforeach; ?>
 
+				<?php
+				/**
+				 * Fires inside the category edit form, after the base fields.
+				 *
+				 * The bffb_category_form_fields filter above runs its return value
+				 * through wp_kses_post(), whose allowed tags include no input,
+				 * select, option or textarea - so it can add markup around a
+				 * field but never the field itself. This action is the seam
+				 * that actually works, matching the transaction form.
+				 *
+				 * @since 1.0.1
+				 * @param object|null $category Category row, or null for new.
+				 */
+				do_action( 'bffb_category_extra_fields', $category );
+				?>
+
 				<?php submit_button( $id > 0 ? __( 'Update Category', 'bluefairy-farmbooks' ) : __( 'Add Category', 'bluefairy-farmbooks' ) ); ?>
 
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=bffb-categories' ) ); ?>" class="button">
@@ -145,7 +164,7 @@ class CategoryEditPage {
 			wp_die( esc_html__( 'You do not have permission to perform this action.', 'bluefairy-farmbooks' ) );
 		}
 
-		check_admin_referer( 'bffb_save_category', 'bffbp_category_nonce' );
+		check_admin_referer( 'bffb_save_category', 'bffb_category_nonce' );
 
 		global $wpdb;
 
@@ -210,6 +229,19 @@ class CategoryEditPage {
 				"SELECT COUNT(*) FROM `{$wpdb->prefix}bffb_transactions` WHERE category_id = %d" , $id
 			)
 		);
+
+		/**
+		 * Filter whether a category is still referenced somewhere.
+		 *
+		 * Free can only see its own transactions table. Anything else holding a
+		 * category id - Pro's budgets, its WooCommerce category mapping - has to
+		 * be able to say so, or the delete looks safe and is not.
+		 *
+		 * @since 1.0.1
+		 * @param int $in_use      Reference count so far.
+		 * @param int $category_id The category being deleted.
+		 */
+		$in_use = (int) apply_filters( 'bffb_category_in_use', $in_use, $id );
 
 		if ( $in_use > 0 ) {
 			wp_safe_redirect(

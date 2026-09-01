@@ -42,6 +42,9 @@ class AccountEditPage {
 			);
 		}
 
+		// Markup only: the return value is passed through wp_kses_post(),
+		// which strips input, select, option and textarea. Use the
+		// bffb_account_extra_fields action below to add an actual field.
 		$extra_fields = apply_filters( 'bffb_account_form_fields', array(), $account );
 
 		$page_title = $id > 0
@@ -69,7 +72,7 @@ class AccountEditPage {
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="bffb_save_account">
 				<input type="hidden" name="id" value="<?php echo esc_attr( (string) $id ); ?>">
-				<?php wp_nonce_field( 'bffb_save_account', 'bffbp_account_nonce' ); ?>
+				<?php wp_nonce_field( 'bffb_save_account', 'bffb_account_nonce' ); ?>
 
 				<table class="form-table" role="presentation">
 					<tr>
@@ -127,6 +130,22 @@ class AccountEditPage {
 					<?php echo wp_kses_post( $field ); ?>
 				<?php endforeach; ?>
 
+				<?php
+				/**
+				 * Fires inside the account edit form, after the base fields.
+				 *
+				 * The bffb_account_form_fields filter above runs its return value
+				 * through wp_kses_post(), whose allowed tags include no input,
+				 * select, option or textarea - so it can add markup around a
+				 * field but never the field itself. This action is the seam
+				 * that actually works, matching the transaction form.
+				 *
+				 * @since 1.0.1
+				 * @param object|null $account Account row, or null for new.
+				 */
+				do_action( 'bffb_account_extra_fields', $account );
+				?>
+
 				<?php submit_button( $id > 0 ? __( 'Update Account', 'bluefairy-farmbooks' ) : __( 'Add Account', 'bluefairy-farmbooks' ) ); ?>
 
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=bffb-accounts' ) ); ?>" class="button">
@@ -142,7 +161,7 @@ class AccountEditPage {
 			wp_die( esc_html__( 'You do not have permission to perform this action.', 'bluefairy-farmbooks' ) );
 		}
 
-		check_admin_referer( 'bffb_save_account', 'bffbp_account_nonce' );
+		check_admin_referer( 'bffb_save_account', 'bffb_account_nonce' );
 
 		global $wpdb;
 
@@ -218,6 +237,15 @@ class AccountEditPage {
 				$id
 			)
 		);
+
+		/**
+		 * Filter whether an account is still referenced somewhere.
+		 *
+		 * @since 1.0.1
+		 * @param int $in_use     Reference count so far.
+		 * @param int $account_id The account being deleted.
+		 */
+		$in_use = (int) apply_filters( 'bffb_account_in_use', $in_use, $id );
 
 		if ( $in_use > 0 ) {
 			wp_safe_redirect(

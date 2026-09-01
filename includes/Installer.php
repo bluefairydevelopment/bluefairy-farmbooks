@@ -318,7 +318,13 @@ class Installer {
 		$table = $wpdb->prefix . 'bffb_settings';
 
 		$defaults = array(
-			'farm_name'         => '',
+			// Not '': the row exists after activation, and Settings::get()
+			// resolves on array_key_exists, so an empty row beats every
+			// caller's fallback. Schedule F printed "Farm Name:" followed by
+			// nothing and every pay stub had a blank employer heading, on a
+			// fresh install, for ever - while both call sites were explicitly
+			// asking for the site title.
+			'farm_name'         => (string) get_bloginfo( 'name' ),
 			'fiscal_year_start' => '1',
 			'tax_year'          => (string) (int) wp_date( 'Y' ),
 			'currency_symbol'   => '$',

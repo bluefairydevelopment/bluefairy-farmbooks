@@ -26,13 +26,31 @@ class SettingsPage {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks' ) );
 		}
 
-		$saved = false;
+		$active_tab = sanitize_key( wp_unslash( $_GET['tab'] ?? 'general' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		if ( ! empty( $_POST['bffb_save_settings'] ) ) {
 			check_admin_referer( 'bffb_save_settings' );
-			$this->save_settings();
-			$saved = true;
+
+			// Only the tab that rendered the fields may save them.
+			if ( 'general' === $active_tab ) {
+				$this->save_settings();
+			}
+
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'page'        => 'bffb-settings',
+						'tab'         => $active_tab,
+						'bffb_notice' => 'saved',
+					),
+					admin_url( 'admin.php' )
+				)
+			);
+			exit;
 		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$saved = isset( $_GET['bffb_notice'] ) && 'saved' === sanitize_key( wp_unslash( $_GET['bffb_notice'] ) );
 
 		/**
 		 * Filter the list of settings tabs.
@@ -48,7 +66,6 @@ class SettingsPage {
 			)
 		);
 
-		$active_tab = sanitize_key( wp_unslash( $_GET['tab'] ?? 'general' ) );
 		if ( ! array_key_exists( $active_tab, $tabs ) ) {
 			$active_tab = 'general';
 		}
