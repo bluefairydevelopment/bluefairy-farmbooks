@@ -46,6 +46,20 @@ function bffb_plugin(): BlueFairy\FarmBooks\Plugin {
 }
 
 /**
+ * Shared re-entrancy counter for the install lock.
+ *
+ * @param int $delta +1 to claim, -1 to release, 0 to read.
+ * @return int The depth after applying $delta.
+ */
+function bffb_install_lock_depth( int $delta = 0 ): int {
+	static $depth = 0;
+
+	$depth = max( 0, $depth + $delta );
+
+	return $depth;
+}
+
+/**
  * Take the network-wide install lock.
  *
  * MySQL's GET_LOCK, not an option row.
@@ -59,13 +73,25 @@ function bffb_plugin(): BlueFairy\FarmBooks\Plugin {
  * process deletes the lock the first has just taken.
  *
  * GET_LOCK is a real mutex, held by the CONNECTION. A request that dies drops
- * its connection and the lock is released by the server, so there is no
- * staleness window to guess at and no way to release someone else's lock.
+ * its connection and the server releases the lock, so there is no staleness
+ * window to guess at and no way to release someone else's.
+ *
+ * Re-entrancy is counted in the process rather than left to the server. The
+ * queue holds the lock and then calls Installer::activate(), which claims it
+ * again; MariaDB and MySQL 5.7+ reference-count that correctly, but MySQL 5.6 -
+ * which WordPress still supports - RELEASES the previous lock when the same
+ * session re-acquires it, so the inner release would drop the queue's lock
+ * early and let a second process in.
  *
  * @return bool True when this process now holds it.
  */
 function bffb_claim_install_lock(): bool {
 	global $wpdb;
+
+	if ( bffb_install_lock_depth() > 0 ) {
+		bffb_install_lock_depth( 1 );
+		return true;
+	}
 
 	// Namespaced by database and table prefix: GET_LOCK names are global to the
 	// MySQL server, and shared hosting puts many installs on one server.
@@ -75,15 +101,26 @@ function bffb_claim_install_lock(): bool {
 	// this one to do.
 	$got = $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', $name, 0 ) );
 
-	// 1 = acquired, 0 = held elsewhere, NULL = the server refused (permissions,
-	// or a proxy that does not support it). NULL means we cannot serialise;
-	// proceed anyway, because the seeded tables now carry unique keys that stop
-	// a race from duplicating anything.
-	return '0' !== (string) $got;
+	// 1 = acquired, 0 = held elsewhere, NULL = the server refused (no
+	// permission, or a proxy that does not support it). NULL means we cannot
+	// serialise; proceed anyway, because the seeded tables carry a unique key
+	// that stops a race from duplicating anything.
+	if ( '0' === (string) $got ) {
+		return false;
+	}
+
+	bffb_install_lock_depth( 1 );
+
+	return true;
 }
 
 function bffb_release_install_lock(): void {
 	global $wpdb;
+
+	// Only the outermost release actually lets go.
+	if ( bffb_install_lock_depth( -1 ) > 0 ) {
+		return;
+	}
 
 	$name = substr( 'bffb_install_' . md5( DB_NAME . $wpdb->base_prefix ), 0, 60 );
 
