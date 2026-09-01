@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace BlueFairy\FarmBooks\Admin;
 
+defined( 'ABSPATH' ) || exit;
+
 class TransactionEditPage {
 
 	public function __construct() {

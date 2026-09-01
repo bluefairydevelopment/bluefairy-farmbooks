@@ -61,7 +61,7 @@ FarmBooks Lite handles farm income and expense tracking aligned to Schedule F. I
 
 = Where does the data live? =
 
-Everything is stored in your WordPress database, in tables prefixed `farmbooks_`. Nothing is sent to any external service. If you migrate hosts, back up your database as normal.
+Everything is stored in your WordPress database, in tables prefixed `bffb_` (after your site's own table prefix, so usually `wp_bffb_`). Nothing is sent to any external service. If you migrate hosts, back up your database as normal.
 
 = Is my data safe if I deactivate the plugin? =
 

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace BlueFairy\FarmBooks\Admin;
 
+defined( 'ABSPATH' ) || exit;
+
 use BlueFairy\FarmBooks\Settings;
 
 class DashboardPage {
@@ -192,7 +194,27 @@ class DashboardPage {
 			$formats[]    = '%s';
 		}
 
-		$wpdb->insert( $table, $data, $formats ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$inserted = $wpdb->insert( $table, $data, $formats ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+
+		if ( false === $inserted ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=bffb-dashboard&bffb_notice=quickadd_failed' ) );
+			exit;
+		}
+
+		/**
+		 * Fires after a transaction is saved. Quick Add fires it too.
+		 *
+		 * This form used to write straight to the table and skip the hook, so
+		 * anything extending the seam — Pro's vendor, tax-deductible flag and
+		 * receipt upload among them — never saw a third of the ledger, and
+		 * those rows then fell out of the Schedule F report. The base was
+		 * breaking the contract it documents in Plugin.php.
+		 *
+		 * @param int   $id   New transaction ID.
+		 * @param array $post Raw POST data — hook implementations must re-sanitize.
+		 */
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		do_action( 'bffb_transaction_saved', (int) $wpdb->insert_id, $_POST );
 
 		wp_safe_redirect(
 			add_query_arg(

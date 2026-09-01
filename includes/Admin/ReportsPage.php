@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace BlueFairy\FarmBooks\Admin;
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * FarmBooks Reports page — Lite tab shell + YTD Summary, Income List, Expense List.
  *
@@ -174,8 +176,8 @@ class ReportsPage {
 		$year = (int) $filters['year'];
 
         // phpcs:disable WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$income   = (float) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount),0) FROM `{$t}` WHERE type='income' AND YEAR(date)=%d", $year ) );
-		$expenses = (float) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount),0) FROM `{$t}` WHERE type='expense' AND YEAR(date)=%d", $year ) );
+		$income   = (float) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount),0) FROM `{$t}` WHERE type='income' AND date BETWEEN %s AND %s", sprintf( '%d-01-01', $year ), sprintf( '%d-12-31', $year ) ) );
+		$expenses = (float) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount),0) FROM `{$t}` WHERE type='expense' AND date BETWEEN %s AND %s", sprintf( '%d-01-01', $year ), sprintf( '%d-12-31', $year ) ) );
         // phpcs:enable WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$net = $income - $expenses;

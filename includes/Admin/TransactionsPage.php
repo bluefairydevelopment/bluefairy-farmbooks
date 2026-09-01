@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace BlueFairy\FarmBooks\Admin;
 
+defined( 'ABSPATH' ) || exit;
+
 use BlueFairy\FarmBooks\Settings;
 
 class TransactionsPage {

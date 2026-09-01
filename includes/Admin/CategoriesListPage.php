@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace BlueFairy\FarmBooks\Admin;
 
+defined( 'ABSPATH' ) || exit;
+
 class CategoriesListPage {
 
 	public function render(): void {
@@ -50,6 +52,14 @@ class CategoriesListPage {
 			'error'   => array(
 				'class'   => 'notice-error',
 				'message' => __( 'Could not save category.', 'bluefairy-farmbooks' ),
+			),
+	
+			// The delete handler refuses while transactions still reference it.
+			// Without this entry the refusal was a silent redirect that looked
+			// exactly like a successful delete.
+			'in_use'  => array(
+				'class'   => 'notice-error',
+				'message' => __( 'That category still has transactions assigned to it, so it was not deleted. Reassign or remove those transactions first.', 'bluefairy-farmbooks' ),
 			),
 		);
 

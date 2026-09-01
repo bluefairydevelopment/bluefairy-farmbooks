@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace BlueFairy\FarmBooks\Admin;
 
+defined( 'ABSPATH' ) || exit;
+
 use BlueFairy\FarmBooks\Settings;
 
 /**
@@ -52,6 +54,7 @@ class SettingsPage {
 		}
 
 		$farm_name         = (string) $this->settings->get( 'farm_name', '' );
+		$farm_ein          = (string) $this->settings->get( 'farm_ein', '' );
 		$fiscal_year_start = (string) $this->settings->get( 'fiscal_year_start', '1' );
 		$tax_year          = (string) $this->settings->get( 'tax_year', (string) (int) wp_date( 'Y' ) );
 		$currency_symbol   = (string) $this->settings->get( 'currency_symbol', '$' );
@@ -134,6 +137,24 @@ class SettingsPage {
 					</tr>
 					<tr>
 						<th scope="row">
+							<label for="bffb_farm_ein"><?php esc_html_e( 'Farm EIN', 'bluefairy-farmbooks' ); ?></label>
+						</th>
+						<td>
+							<input
+								type="text"
+								id="bffb_farm_ein"
+								name="bffb_farm_ein"
+								value="<?php echo esc_attr( $farm_ein ); ?>"
+								class="regular-text"
+								maxlength="20"
+							>
+							<p class="description">
+								<?php esc_html_e( 'Employer Identification Number, printed on the Schedule F prep report. Leave blank if you file under your Social Security number.', 'bluefairy-farmbooks' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
 							<label for="bffb_fiscal_year_start"><?php esc_html_e( 'Fiscal Year Start', 'bluefairy-farmbooks' ); ?></label>
 						</th>
 						<td>
@@ -208,6 +229,12 @@ class SettingsPage {
 			wp_unslash( (string) ( $_POST['bffb_farm_name'] ?? '' ) )
 		);
 		$this->settings->set( 'farm_name', $farm_name );
+
+		// Read by Pro's Schedule F header, which had no way to set it.
+		$this->settings->set(
+			'farm_ein',
+			sanitize_text_field( wp_unslash( (string) ( $_POST['bffb_farm_ein'] ?? '' ) ) )
+		);
 
 		$fiscal_year_start_raw = sanitize_key( wp_unslash( $_POST['bffb_fiscal_year_start'] ?? '1' ) );
 		$fiscal_year_start     = in_array( $fiscal_year_start_raw, array_map( 'strval', range( 1, 12 ) ), true )

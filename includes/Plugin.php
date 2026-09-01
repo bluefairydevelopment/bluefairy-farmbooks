@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace BlueFairy\FarmBooks;
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Central plugin bootstrap — wires every component together.
  */
@@ -61,7 +63,23 @@ final class Plugin {
 
 	private function boot_admin(): void {
 		$transaction_edit = new Admin\TransactionEditPage();
-		$menu             = new Admin\AdminMenu( $this->settings, $transaction_edit );
+
+		// DashboardPage is constructed HERE, not inside the admin_menu callback.
+		//
+		// It registers admin_post_bffb_quick_add_transaction in its constructor,
+		// and wp-admin/admin-post.php loads wp-load.php and includes/admin.php
+		// only - it never loads menu.php, so admin_menu does not fire there.
+		// Built inside bffb_add_menu() the handler was therefore never
+		// registered on the one request that needs it, and Quick Add answered
+		// every submission with HTTP 400.
+		$dashboard = new Admin\DashboardPage( $this->settings );
+
+		// Same reasoning as DashboardPage: these register admin_post_ handlers,
+		// so they must be constructed on every admin request, not inside an
+		// admin_menu callback that admin-post.php never fires.
+		$category_edit = new Admin\CategoryEditPage();
+		$account_edit  = new Admin\AccountEditPage();
+		$menu = new Admin\AdminMenu( $this->settings, $transaction_edit, $dashboard, $category_edit, $account_edit );
 		$menu->register();
 	}
 

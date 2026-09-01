@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace BlueFairy\FarmBooks;
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Handles plugin activation, deactivation, and database installation.
  *

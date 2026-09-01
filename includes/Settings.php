@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace BlueFairy\FarmBooks;
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Manages plugin settings stored in the bffb_settings table.
  *
@@ -66,6 +68,9 @@ class Settings {
 	public static function defaults(): array {
 		return array(
 			'farm_name'         => '',
+			// Read by Pro's Schedule F header. It had no default and no writer,
+			// so that report always printed "EIN: —" with no way to set one.
+			'farm_ein'          => '',
 			'fiscal_year_start' => '1',
 			'tax_year'          => (string) (int) wp_date( 'Y' ),
 			'currency_symbol'   => '$',
@@ -78,6 +83,15 @@ class Settings {
 	 *
 	 * @return array<string, mixed>
 	 */
+	/**
+	 * Load every setting row.
+	 *
+	 * The cap was 500. option_key is a free-form varchar and the table is
+	 * documented as extensible, so anything past row 500 would have become
+	 * permanently unreadable through get() — silently, because
+	 * array_key_exists() on the truncated cache just falls through to the coded
+	 * default. Raised, and it now says so in the log if it is ever reached.
+	 */
 	private function load_all(): array {
 		if ( $this->cache !== null ) {
 			return $this->cache;
@@ -88,7 +102,7 @@ class Settings {
 		$table = $wpdb->prefix . 'bffb_settings';
 		$rows  = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			"SELECT `option_key`, `option_value` FROM `{$table}` LIMIT 500",
+			"SELECT `option_key`, `option_value` FROM `{$table}` LIMIT 5000",
 			ARRAY_A
 		);
 
