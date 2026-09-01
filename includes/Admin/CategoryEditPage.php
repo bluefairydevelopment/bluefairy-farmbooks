@@ -201,7 +201,22 @@ class CategoryEditPage {
 			$formats[]          = '%d';
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$wpdb->insert( $table, $data, $formats );
+			$id = (int) $wpdb->insert_id;
 		}
+
+		/**
+		 * Fires after a category row is written.
+		 *
+		 * The bffb_category_extra_fields action can render a field; without this
+		 * one there was nowhere to save it, so an added field displayed, was
+		 * typed into, and silently discarded on every save.
+		 *
+		 * @since 1.0.1
+		 * @param int                  $id   The saved category ID.
+		 * @param array<string, mixed> $post Raw POST data. Re-sanitize before use.
+		 */
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified by check_admin_referer() above.
+		do_action( 'bffb_category_saved', $id, wp_unslash( $_POST ) );
 
 		wp_safe_redirect( admin_url( 'admin.php?page=bffb-categories&bffb_notice=saved' ) );
 		exit;
@@ -241,7 +256,23 @@ class CategoryEditPage {
 		 * @param int $in_use      Reference count so far.
 		 * @param int $category_id The category being deleted.
 		 */
-		$in_use = (int) apply_filters( 'bffb_category_in_use', $in_use, $id );
+		// max(): a filter must only ever ADD references. Clamping stops a
+		// third party that returns a bare count - or a negative - from masking
+		// the references this plugin found itself.
+		// The list table hides Delete for seeded rows; the handler never checked,
+		// so a hand-built nonce removed one anyway - and every transaction pointing at
+		// it silently lost its Schedule F line.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$is_default = (int) $wpdb->get_var(
+			$wpdb->prepare( "SELECT is_default FROM `{$wpdb->prefix}bffb_categories` WHERE id = %d", $id )
+		);
+
+		if ( 1 === $is_default ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=bffb-categories&bffb_notice=is_default' ) );
+			exit;
+		}
+
+		$in_use = max( $in_use, (int) apply_filters( 'bffb_category_in_use', $in_use, $id ) );
 
 		if ( $in_use > 0 ) {
 			wp_safe_redirect(
@@ -249,8 +280,6 @@ class CategoryEditPage {
 			);
 			exit;
 		}
-
-		global $wpdb;
 
 		$table = $wpdb->prefix . 'bffb_categories';
 

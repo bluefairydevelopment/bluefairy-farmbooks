@@ -21,19 +21,22 @@ class AdminMenu {
 	private DashboardPage $dashboard;
 	private CategoryEditPage $category_edit;
 	private AccountEditPage $account_edit;
+	private SettingsPage $settings_page;
 
 	public function __construct(
 		Settings $settings,
 		TransactionEditPage $transaction_edit,
 		DashboardPage $dashboard,
 		CategoryEditPage $category_edit,
-		AccountEditPage $account_edit
+		AccountEditPage $account_edit,
+		SettingsPage $settings_page
 	) {
 		$this->settings         = $settings;
 		$this->transaction_edit = $transaction_edit;
 		$this->dashboard        = $dashboard;
 		$this->category_edit    = $category_edit;
 		$this->account_edit     = $account_edit;
+		$this->settings_page    = $settings_page;
 	}
 
 	public function register(): void {
@@ -133,7 +136,7 @@ class AdminMenu {
 			__( 'Settings', 'bluefairy-farmbooks' ),
 			'manage_options',
 			'bffb-settings',
-			array( new SettingsPage( $this->settings ), 'render' )
+			array( $this->settings_page, 'render' )
 		);
 
 		// The two hidden edit screens for the base's own entities. Registered

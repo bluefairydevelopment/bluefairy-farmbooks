@@ -4,7 +4,7 @@ Tags: farm accounting, schedule f, income expense, agriculture, bookkeeping
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,6 +91,15 @@ Support requests are handled at [bluefairydevelopment.com](https://bluefairydeve
 4. Reports — expense list, income list, YTD totals.
 
 == Changelog ==
+
+= 1.0.1 =
+* Fixed: saving Settings from a tab added by another plugin wiped farm name, EIN, fiscal year start, tax year and currency.
+* Fixed: the Settings form now redirects after saving, so a reload no longer re-submits it.
+* Fixed: a fresh install seeded an empty farm name, so Schedule F and pay stubs printed a blank one. Existing installs are backfilled.
+* Fixed: default accounts and categories could be deleted with a hand-built link despite the button being hidden.
+* Fixed: the delete guards now see references held by add-ons, not only this plugin's own transactions.
+* Fixed: tables are created and removed on every site of a multisite network.
+* Added: extension actions for adding and saving custom fields on the account and category forms, and filters to veto a delete.
 
 = 1.0.0 =
 * Initial release.

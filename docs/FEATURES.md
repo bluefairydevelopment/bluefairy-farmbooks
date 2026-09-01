@@ -1,4 +1,4 @@
-# BlueFairy FarmBooks Lite — Feature Reference
+# BlueFairy FarmBooks — Feature Reference
 
 ## Phase 1 (Current)
 

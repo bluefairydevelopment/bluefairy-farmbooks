@@ -19,6 +19,81 @@ class SettingsPage {
 
 	public function __construct( Settings $settings ) {
 		$this->settings = $settings;
+
+		add_action( 'admin_post_bffb_save_settings', array( $this, 'handle_save' ) );
+	}
+
+	/**
+	 * Save handler, on admin-post.php.
+	 *
+	 * Not in render(): that is a menu-page callback, and admin-header.php has
+	 * already sent the whole document head by the time it runs, so a redirect
+	 * from there cannot set a header.
+	 */
+	public function handle_save(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to perform this action.', 'bluefairy-farmbooks' ) );
+		}
+
+		check_admin_referer( 'bffb_save_settings' );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified immediately above.
+		$requested_tab = sanitize_key( wp_unslash( $_POST['bffb_active_tab'] ?? 'general' ) );
+		$tabs          = $this->tabs();
+
+		// Only the General tab may save these fields, and the test is against
+		// the tab the form SAID it was on - not against a validated one.
+		//
+		// Falling back to 'general' for an unknown slug is right when deciding
+		// what to render and wrong when deciding what to write: an unknown tab
+		// then saved the General fields from a $_POST that never carried them,
+		// blanking farm name, EIN, fiscal year start, tax year and currency.
+		// Proven, on the fix that was supposed to prevent exactly that.
+		$notice = 'nothing_to_save';
+
+		if ( 'general' === $requested_tab ) {
+			$this->save_settings();
+			$notice = 'saved';
+		}
+
+		// Only a real tab may steer the redirect.
+		$active_tab = array_key_exists( $requested_tab, $tabs ) ? $requested_tab : 'general';
+
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'        => 'bffb-settings',
+					'tab'         => $active_tab,
+					'bffb_notice' => $notice,
+				),
+				admin_url( 'admin.php' )
+			)
+		);
+		exit;
+	}
+
+	/**
+	 * The tab list, in one place so render() and handle_save() cannot disagree
+	 * about which slugs are real.
+	 *
+	 * @return array<string, string>
+	 */
+	private function tabs(): array {
+		/**
+		 * Filter the list of settings tabs.
+		 *
+		 * A tab added here renders its own fields and must save them itself:
+		 * this plugin's own save only ever runs for the General tab.
+		 *
+		 * @since 1.0.0
+		 * @param array<string, string> $tabs Associative array of tab slug => tab label.
+		 */
+		return apply_filters(
+			'bffb_settings_tabs',
+			array(
+				'general' => __( 'General', 'bluefairy-farmbooks' ),
+			)
+		);
 	}
 
 	public function render(): void {
@@ -26,45 +101,14 @@ class SettingsPage {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks' ) );
 		}
 
-		$active_tab = sanitize_key( wp_unslash( $_GET['tab'] ?? 'general' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-
-		if ( ! empty( $_POST['bffb_save_settings'] ) ) {
-			check_admin_referer( 'bffb_save_settings' );
-
-			// Only the tab that rendered the fields may save them.
-			if ( 'general' === $active_tab ) {
-				$this->save_settings();
-			}
-
-			wp_safe_redirect(
-				add_query_arg(
-					array(
-						'page'        => 'bffb-settings',
-						'tab'         => $active_tab,
-						'bffb_notice' => 'saved',
-					),
-					admin_url( 'admin.php' )
-				)
-			);
-			exit;
-		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$active_tab = sanitize_key( wp_unslash( $_GET['tab'] ?? 'general' ) );
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$saved = isset( $_GET['bffb_notice'] ) && 'saved' === sanitize_key( wp_unslash( $_GET['bffb_notice'] ) );
+		$notice = isset( $_GET['bffb_notice'] ) ? sanitize_key( wp_unslash( $_GET['bffb_notice'] ) ) : '';
+		$saved  = 'saved' === $notice;
 
-		/**
-		 * Filter the list of settings tabs.
-		 * Pro hooks here to add a WooCommerce Integration tab and a Payroll tab.
-		 *
-		 * @since 1.0.0
-		 * @param array<string, string> $tabs Associative array of tab slug => tab label.
-		 */
-		$tabs = apply_filters(
-			'bffb_settings_tabs',
-			array(
-				'general' => __( 'General', 'bluefairy-farmbooks' ),
-			)
-		);
+		$tabs = $this->tabs();
 
 		if ( ! array_key_exists( $active_tab, $tabs ) ) {
 			$active_tab = 'general';
@@ -99,6 +143,11 @@ class SettingsPage {
 				<div class="notice notice-success is-dismissible">
 					<p><?php esc_html_e( 'Settings saved.', 'bluefairy-farmbooks' ); ?></p>
 				</div>
+			<?php elseif ( 'nothing_to_save' === $notice ) : ?>
+				<?php // Saying "Settings saved." over discarded input is worse than saying nothing. ?>
+				<div class="notice notice-warning is-dismissible">
+					<p><?php esc_html_e( 'Nothing was saved: that tab is provided by another plugin and stores its own settings.', 'bluefairy-farmbooks' ); ?></p>
+				</div>
 			<?php endif; ?>
 
 			<?php if ( count( $tabs ) > 1 ) : ?>
@@ -124,12 +173,11 @@ class SettingsPage {
 			</nav>
 			<?php endif; ?>
 
-			<form method="post" action="">
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<?php wp_nonce_field( 'bffb_save_settings' ); ?>
-				<input type="hidden" name="bffb_save_settings" value="1">
-				<?php if ( count( $tabs ) > 1 ) : ?>
-					<input type="hidden" name="bffb_active_tab" value="<?php echo esc_attr( $active_tab ); ?>">
-				<?php endif; ?>
+				<input type="hidden" name="action" value="bffb_save_settings">
+				<?php // Always emitted, not only when a second tab exists: the handler reads it to decide whether it may save. ?>
+				<input type="hidden" name="bffb_active_tab" value="<?php echo esc_attr( $active_tab ); ?>">
 
 				<?php if ( 'general' === $active_tab ) : ?>
 

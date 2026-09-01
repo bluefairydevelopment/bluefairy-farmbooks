@@ -1,4 +1,4 @@
-# BlueFairy FarmBooks Lite
+# BlueFairy FarmBooks
 
 Farm income and expense tracking aligned to IRS Schedule F. Built for small family farms running WordPress.
 

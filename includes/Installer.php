@@ -14,6 +14,19 @@ defined( 'ABSPATH' ) || exit;
 class Installer {
 
 	/**
+	 * Schema version for the base tables.
+	 *
+	 * Bump this whenever install_tables() or the seeded rows change, and add
+	 * the matching one-shot step to run_pending_migrations(). Until 2026-08-31
+	 * this value was the literal '1' in two places, written on activation and
+	 * read by nothing - so an existing farm never received a schema change, and
+	 * Pro's own troubleshooting notes told operators to read it as the base
+	 * schema version.
+	 */
+	private const DB_VERSION = '2';
+
+
+	/**
 	 * Run on plugin activation.
 	 */
 	public function activate(): void {
@@ -21,13 +34,53 @@ class Installer {
 		$this->maybe_seed_accounts();
 		$this->maybe_seed_categories();
 		$this->maybe_seed_settings();
+
+		$this->run_pending_migrations();
+		$this->settings()->set( 'db_version', self::DB_VERSION );
+	}
+
+	/**
+	 * One-shot migrations for installs that predate the current schema.
+	 */
+	private function run_pending_migrations(): void {
+		$from = (int) $this->settings()->get( 'db_version', 1 );
+
+		if ( $from < 2 ) {
+			$this->backfill_farm_name();
+		}
+	}
+
+	/**
+	 * Activation seeded farm_name as an EMPTY row, and Settings::get() resolves
+	 * on array_key_exists - so the site-title fallback that Schedule F and the
+	 * pay stubs both ask for could never fire. Seeding the title fixed new
+	 * installs; every existing farm still has the empty row.
+	 */
+	private function backfill_farm_name(): void {
+		$settings = $this->settings();
+
+		if ( '' === (string) $settings->get( 'farm_name', '' ) ) {
+			$settings->set( 'farm_name', (string) get_bloginfo( 'name' ) );
+		}
+	}
+
+	private function settings(): Settings {
+		return new Settings();
 	}
 
 	/**
 	 * Run on plugin deactivation.
 	 */
 	public function deactivate(): void {
-		// Nothing to unschedule — no cron events registered by this plugin (Lite).
+		// Leave no dangling scheduled event or half-finished queue behind if the
+		// plugin is switched off part way through a network rollout.
+		$timestamp = wp_next_scheduled( 'bffb_continue_site_installs' );
+
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'bffb_continue_site_installs' );
+		}
+
+		delete_site_option( 'bffb_pending_site_installs' );
 	}
 
 	/**
@@ -328,7 +381,7 @@ class Installer {
 			'fiscal_year_start' => '1',
 			'tax_year'          => (string) (int) wp_date( 'Y' ),
 			'currency_symbol'   => '$',
-			'db_version'        => '1',
+			'db_version'        => self::DB_VERSION,
 		);
 
 		foreach ( $defaults as $key => $value ) {

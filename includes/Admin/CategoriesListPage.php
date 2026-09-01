@@ -12,14 +12,14 @@ class CategoriesListPage {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks' ) );
 		}
 
-		$this->maybe_show_notice();
-
 		$table = new CategoriesListTable();
 		$table->prepare_items();
 
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Categories', 'bluefairy-farmbooks' ); ?></h1>
+
+			<?php $this->maybe_show_notice(); ?>
 
 			<?php do_action( 'bffb_categories_page_actions' ); ?>
 
@@ -57,9 +57,14 @@ class CategoriesListPage {
 			// The delete handler refuses while transactions still reference it.
 			// Without this entry the refusal was a silent redirect that looked
 			// exactly like a successful delete.
+			'is_default' => array(
+				'class'   => 'notice-error',
+				'message' => __( 'That category is part of the default set and cannot be deleted.', 'bluefairy-farmbooks' ),
+			),
+
 			'in_use'  => array(
 				'class'   => 'notice-error',
-				'message' => __( 'That category still has transactions assigned to it, so it was not deleted. Reassign or remove those transactions first.', 'bluefairy-farmbooks' ),
+				'message' => __( 'That category is still referenced - by transactions, or by an add-on such as a budget or a WooCommerce mapping - so it was not deleted. Clear those references first.', 'bluefairy-farmbooks' ),
 			),
 		);
 

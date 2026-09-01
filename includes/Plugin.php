@@ -37,18 +37,53 @@ final class Plugin {
 		}
 
 		/**
-		 * Fires after BlueFairy FarmBooks Lite is fully booted.
-		 * Pro and third-party plugins hook here to initialize their own components.
+		 * Fires after BlueFairy FarmBooks is fully booted.
+		 * Pro and third-party plugins hook here to initialise their own components.
 		 *
-		 * Extension hooks registered by Lite for Pro and third-party use:
+		 * The full seam list, which this block used to give incompletely - it
+		 * named six of eighteen and still advertised a filter that cannot do
+		 * what it claims. A developer reads this first, so it has to be right.
 		 *
-		 * do_action('bffb_loaded')                              — fires here, after full boot
-		 * do_action('bffb_admin_menu_items')                    — fires after Lite submenus register
-		 * do_action('bffb_dashboard_widgets')                   — fires inside DashboardPage::render()
-		 * apply_filters('bffb_settings_tabs', $tabs)            — filters settings tab list
-		 * apply_filters('bffb_reports_list', $reports)          — filters available reports
-		 * apply_filters('bffb_transaction_form_fields', $fields, $transaction_id)
-		 *                                                        — filters transaction form fields (Phase 3)
+		 * Lifecycle
+		 *   do_action('bffb_loaded')                     — after full boot
+		 *   do_action('bffb_admin_menu_items')           — after the submenus register
+		 *
+		 * Screens
+		 *   do_action('bffb_dashboard_widgets')
+		 *   do_action('bffb_transactions_page_actions')
+		 *   do_action('bffb_accounts_page_actions')
+		 *   do_action('bffb_categories_page_actions')
+		 *   apply_filters('bffb_settings_tabs', $tabs)   — a tab added here saves its own fields
+		 *   apply_filters('bffb_reports_list', $reports)
+		 *   do_action('bffb_render_report', $slug, $filters)
+		 *
+		 * Row actions
+		 *   apply_filters('bffb_transaction_row_actions', $actions, $transaction)
+		 *   apply_filters('bffb_account_row_actions', $actions, $account)
+		 *   apply_filters('bffb_category_row_actions', $actions, $category)
+		 *
+		 * Edit forms — to ADD A FIELD use the *_extra_fields ACTION. The
+		 * *_form_fields FILTERS pass their return through wp_kses_post(),
+		 * which strips input, select, option and textarea, so they can add
+		 * markup around a field but never the field itself.
+		 *   do_action('bffb_transaction_extra_fields', $transaction)
+		 *   do_action('bffb_category_extra_fields', $category)
+		 *   do_action('bffb_account_extra_fields', $account)
+		 *   apply_filters('bffb_transaction_form_fields', $fields, $transaction)
+		 *   apply_filters('bffb_category_form_fields', $fields, $category)
+		 *   apply_filters('bffb_account_form_fields', $fields, $account)
+		 *
+		 * After a write — pair these with the *_extra_fields actions above, or
+		 * an added field renders and is discarded on save.
+		 *   do_action('bffb_transaction_saved', $id, $post)
+		 *   do_action('bffb_transaction_deleted', $id)
+		 *   do_action('bffb_category_saved', $id, $post)
+		 *   do_action('bffb_account_saved', $id, $post)
+		 *
+		 * Before a delete — return $in_use PLUS your own references, never a
+		 * bare count.
+		 *   apply_filters('bffb_category_in_use', $in_use, $category_id)
+		 *   apply_filters('bffb_account_in_use', $in_use, $account_id)
 		 */
 		do_action( 'bffb_loaded' );
 	}
@@ -79,7 +114,16 @@ final class Plugin {
 		// admin_menu callback that admin-post.php never fires.
 		$category_edit = new Admin\CategoryEditPage();
 		$account_edit  = new Admin\AccountEditPage();
-		$menu = new Admin\AdminMenu( $this->settings, $transaction_edit, $dashboard, $category_edit, $account_edit );
+
+		// And SettingsPage, for the same reason. Moving its save off the
+		// menu-page callback and onto admin-post.php fixed a redirect that
+		// could never set a header - and immediately reintroduced the older
+		// bug one line up, because the class was still only constructed inside
+		// bffb_add_menu(). Nothing was hooked to admin_post_bffb_save_settings
+		// on the request that needed it, so every save died with a blank 400.
+		$settings_page = new Admin\SettingsPage( $this->settings );
+
+		$menu = new Admin\AdminMenu( $this->settings, $transaction_edit, $dashboard, $category_edit, $account_edit, $settings_page );
 		$menu->register();
 	}
 
