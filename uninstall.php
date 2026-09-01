@@ -41,6 +41,7 @@ function bffb_uninstall_this_site(): void {
 
 	delete_option( 'bffb_db_version' );
 
+
 	// Anything else this plugin left in wp_options, including from a version that
 	// wrote one this list does not know about. Matched on the bffb_ prefix
 	// exactly: bffbp_ belongs to Pro and must survive a free-only uninstall.
@@ -64,6 +65,7 @@ function bffb_uninstall_this_site(): void {
 // the same delete once per site.
 delete_site_option( 'bffb_pending_site_installs' );
 delete_site_option( 'bffb_site_install_lock' );
+delete_site_option( 'bffb_failed_site_installs' );
 delete_option( 'bffb_pending_site_installs' );
 delete_option( 'bffb_site_install_lock' );
 

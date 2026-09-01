@@ -69,11 +69,27 @@ class SettingsPage {
 		 * form said it was on.
 		 *
 		 * @since 1.0.1
-		 * @param string               $requested_tab The tab the form was on.
+		 * @param string               $requested_tab The tab slug the form claimed,
+		 *                                            sanitize_key()'d but NOT checked
+		 *                                            against the registered tabs.
+		 *                                            Compare it to your own slug.
 		 * @param array<string, mixed> $post          Raw POST. Re-sanitize before use.
 		 */
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified by check_admin_referer() above.
 		do_action( 'bffb_save_settings_tab', $requested_tab, wp_unslash( $_POST ) );
+
+		/**
+		 * Filter the notice shown after a settings save.
+		 *
+		 * A tab that saved on the action above must be able to say so. Without
+		 * this the screen told the user "Nothing was saved" over a save that
+		 * had just succeeded, and they re-entered and re-saved in a loop.
+		 *
+		 * @since 1.0.1
+		 * @param string $notice        One of: saved, nothing_to_save.
+		 * @param string $requested_tab The tab the form was on.
+		 */
+		$notice = sanitize_key( (string) apply_filters( 'bffb_settings_saved_notice', $notice, $requested_tab ) );
 
 		wp_safe_redirect(
 			add_query_arg(

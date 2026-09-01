@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 class Settings {
 
 	/** @var array<string, mixed>|null In-memory cache of all settings. */
-	private ?array $cache = null;
+	private static ?array $cache = null;
 
 	/**
 	 * Which blog the cache belongs to.
@@ -24,7 +24,7 @@ class Settings {
 	 * first read after a switch would return the previous site's values from
 	 * cache, silently.
 	 */
-	private ?int $cache_blog_id = null;
+	private static ?int $cache_blog_id = null;
 
 	/**
 	 * Get a setting value by key with optional fallback default.
@@ -48,7 +48,7 @@ class Settings {
 	 * Uses INSERT … ON DUPLICATE KEY UPDATE to handle both insert and update.
 	 */
 	public function set( string $key, mixed $value ): void {
-		$this->cache = null;
+		self::$cache = null;
 
 		global $wpdb;
 
@@ -69,7 +69,6 @@ class Settings {
 		);
 
 		// Invalidate cache.
-		$this->cache = null;
 	}
 
 	/**
@@ -110,11 +109,11 @@ class Settings {
 	private function load_all(): array {
 		$blog_id = function_exists( 'get_current_blog_id' ) ? get_current_blog_id() : 0;
 
-		if ( $this->cache !== null && $this->cache_blog_id === $blog_id ) {
-			return $this->cache;
+		if ( self::$cache !== null && self::$cache_blog_id === $blog_id ) {
+			return self::$cache;
 		}
 
-		$this->cache_blog_id = $blog_id;
+		self::$cache_blog_id = $blog_id;
 
 		global $wpdb;
 
@@ -125,14 +124,14 @@ class Settings {
 			ARRAY_A
 		);
 
-		$this->cache = array();
+		self::$cache = array();
 		if ( is_array( $rows ) ) {
 			foreach ( $rows as $row ) {
-				$this->cache[ (string) $row['option_key'] ] = $row['option_value'];
+				self::$cache[ (string) $row['option_key'] ] = $row['option_value'];
 			}
 		}
 
-		return $this->cache;
+		return self::$cache;
 	}
 
 	/**

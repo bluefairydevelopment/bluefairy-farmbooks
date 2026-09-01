@@ -24,7 +24,7 @@ class Installer {
 	 * schema version.
 	 */
 	private const DB_VERSION    = '2';
-	private const VERSION_OPTION = 'bffb_db_version';
+	private const VERSION_OPTION      = 'bffb_db_version';
 
 
 	/**
@@ -54,12 +54,73 @@ class Installer {
 			return;
 		}
 
+		// One at a time. The seeding below is a check-then-insert with no
+		// unique key behind it, so two admin requests arriving together on a
+		// site that has not been seeded yet both see COUNT(*) = 0 and both
+		// insert the whole default chart of accounts. add_option() is an
+		// INSERT against option_name's unique key - the atomic primitive
+		// available here; a second caller gets false and leaves.
+		// The SAME lock the network-install queue takes. They used to hold
+		// different ones, so the queue could be running activate() on this very
+		// site while this method seeded it from an admin request - both seeing
+		// COUNT(*) = 0, both inserting the whole default chart of accounts, and
+		// neither able to delete the duplicates afterwards because every seeded
+		// row is is_default = 1.
+		if ( ! bffb_claim_install_lock() ) {
+			return;
+		}
+
 		$this->install_tables();
 		$this->maybe_seed_accounts();
 		$this->maybe_seed_categories();
 		$this->maybe_seed_settings();
+		if ( ! $this->tables_exist() ) {
+			// dbDelta neither throws nor reports failure, so the only way to
+			// know whether it worked is to look. Recording the version anyway
+			// would short-circuit this method for ever on a site whose tables
+			// were never created.
+			bffb_release_install_lock();
+			add_action( 'admin_notices', array( $this, 'notice_install_failed' ) );
+			return;
+		}
+
 		$this->run_pending_migrations();
 		$this->record_version();
+
+		bffb_release_install_lock();
+	}
+
+	/**
+	 * Are all four base tables actually present?
+	 */
+	private function tables_exist(): bool {
+		global $wpdb;
+
+		foreach ( array( 'bffb_transactions', 'bffb_categories', 'bffb_accounts', 'bffb_settings' ) as $suffix ) {
+			$table = $wpdb->prefix . $suffix;
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$found = (string) $wpdb->get_var(
+				$wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) )
+			);
+
+			if ( $found !== $table ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	public function notice_install_failed(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		printf(
+			'<div class="notice notice-error"><p>%s</p></div>',
+			esc_html__( 'FarmBooks could not create its database tables. Check that the database user has CREATE permission, then deactivate and reactivate the plugin. Your books cannot be saved until this is resolved.', 'bluefairy-farmbooks' )
+		);
 	}
 
 	private function record_version(): void {
@@ -73,7 +134,13 @@ class Installer {
 	 * One-shot migrations for installs that predate the current schema.
 	 */
 	private function run_pending_migrations(): void {
-		$from = (int) get_option( self::VERSION_OPTION, $this->settings()->get( 'db_version', 1 ) );
+		// Deliberately NOT falling back to the bffb_settings db_version row.
+		// An earlier release stamped that row with the current version before
+		// the migration read it, so on exactly the installs that still need
+		// backfilling it reads as already done. An absent option means this
+		// mechanism has never run here; every step below is idempotent, so
+		// re-running them on a healthy site costs nothing.
+		$from = (int) get_option( self::VERSION_OPTION, 0 );
 
 		if ( $from < 2 ) {
 			$this->backfill_farm_name();
@@ -85,6 +152,10 @@ class Installer {
 	 * on array_key_exists - so the site-title fallback that Schedule F and the
 	 * pay stubs both ask for could never fire. Seeding the title fixed new
 	 * installs; every existing farm still has the empty row.
+	 *
+	 * It cannot distinguish "never filled in" from "deliberately cleared" -
+	 * nothing records which. It runs exactly once, on the first upgrade to
+	 * schema 2, so a farm that clears the field afterwards keeps it clear.
 	 */
 	private function backfill_farm_name(): void {
 		$settings = $this->settings();
@@ -94,8 +165,12 @@ class Installer {
 		}
 	}
 
+	private ?Settings $settings = null;
+
 	private function settings(): Settings {
-		return new Settings();
+		// Memoised. A fresh instance per call meant every caller paid for its
+		// own full SELECT of the settings table.
+		return $this->settings ??= new Settings();
 	}
 
 	/**
@@ -111,6 +186,7 @@ class Installer {
 		}
 
 		delete_site_option( 'bffb_pending_site_installs' );
+		delete_site_option( 'bffb_failed_site_installs' );
 	}
 
 	/**

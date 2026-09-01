@@ -46,6 +46,63 @@ function bffb_plugin(): BlueFairy\FarmBooks\Plugin {
 }
 
 /**
+ * Take the network-wide install lock, atomically.
+ *
+ * add_option() on the MAIN site, not add_site_option(): the latter is a
+ * check-then-act on multisite, because wp_sitemeta carries an ordinary KEY on
+ * meta_key rather than a UNIQUE one - so two callers can both read "absent" and
+ * both insert. wp_options DOES have a unique key on option_name, which makes
+ * this INSERT the atomic primitive available here.
+ *
+ * @return bool True when this process now holds the lock.
+ */
+function bffb_claim_install_lock(): bool {
+	$main = is_multisite() ? get_main_site_id() : 0;
+
+	if ( $main ) {
+		switch_to_blog( $main );
+	}
+
+	try {
+		if ( add_option( 'bffb_site_install_lock', time(), '', false ) ) {
+			return true;
+		}
+
+		$age = time() - (int) get_option( 'bffb_site_install_lock', 0 );
+
+		if ( $age < 300 ) {
+			return false;
+		}
+
+		// A lock left by a request that died. Retake it the same atomic way, so
+		// two processes recovering the same stale lock cannot both continue.
+		delete_option( 'bffb_site_install_lock' );
+
+		return (bool) add_option( 'bffb_site_install_lock', time(), '', false );
+	} finally {
+		if ( $main ) {
+			restore_current_blog();
+		}
+	}
+}
+
+function bffb_release_install_lock(): void {
+	$main = is_multisite() ? get_main_site_id() : 0;
+
+	if ( $main ) {
+		switch_to_blog( $main );
+	}
+
+	try {
+		delete_option( 'bffb_site_install_lock' );
+	} finally {
+		if ( $main ) {
+			restore_current_blog();
+		}
+	}
+}
+
+/**
  * Install into as many queued sites as fit in a time budget, then reschedule.
  *
  * Resumable by design: the queue is a network option, and each site is removed
@@ -60,28 +117,23 @@ function bffb_process_pending_site_installs(): void {
 		return;
 	}
 
-	// One run at a time. Two overlapping cron firings can both read the same
-	// pending array before either writes, and Installer::activate() seeds the
-	// default chart of accounts with a check-then-insert and no unique key -
-	// so a race duplicates every seeded row on that site.
-	if ( ! add_site_option( 'bffb_site_install_lock', time() ) ) {
-		$lock_age = time() - (int) get_site_option( 'bffb_site_install_lock', 0 );
-
-		if ( $lock_age < 300 ) {
-			return;
-		}
-
-		// A stale lock from a request that died holding it.
-		update_site_option( 'bffb_site_install_lock', time() );
-	}
-
-	// Schedule the continuation BEFORE the loop, not after it. Scheduling
-	// afterwards meant a fatal inside the loop - a stale blog row calling
-	// dead_db(), say - skipped it entirely, leaving a non-empty queue, no cron
-	// event, and an admin notice promising for ever that this "continues
-	// automatically in the background".
+	// Schedule the continuation FIRST, before anything below can return.
+	//
+	// It used to sit under the lock check, and wp-cron unschedules a single
+	// event before invoking its hook - so a run that found the lock held (a
+	// crashed predecessor, or simply a slow one still inside its budget)
+	// consumed the event and returned without rescheduling. The queue then
+	// stalled for ever behind a notice saying it was still progressing.
 	if ( ! wp_next_scheduled( 'bffb_continue_site_installs' ) ) {
 		wp_schedule_single_event( time() + 60, 'bffb_continue_site_installs' );
+	}
+
+	// One run at a time. Two overlapping firings can both read the same pending
+	// array before either writes, and Installer::activate() seeds the default
+	// chart of accounts with a check-then-insert and no unique key - so a race
+	// duplicates every seeded row on that site.
+	if ( ! bffb_claim_install_lock() ) {
+		return;
 	}
 
 	// Well inside a 30s max_execution_time, with room for the request's own
@@ -98,6 +150,14 @@ function bffb_process_pending_site_installs(): void {
 		// the same way. One casualty blocked the whole network for ever.
 		update_site_option( 'bffb_pending_site_installs', $pending );
 
+		// Assume it will fail, and clear that assumption on success. Advancing
+		// the queue before the attempt is right for liveness, but with nothing
+		// recording the casualty the counter simply reached zero and the notice
+		// disappeared - which reads as success.
+		$failed   = (array) get_site_option( 'bffb_failed_site_installs', array() );
+		$failed[] = $site_id;
+		update_site_option( 'bffb_failed_site_installs', array_values( array_unique( $failed ) ) );
+
 		switch_to_blog( $site_id );
 
 		try {
@@ -107,9 +167,18 @@ function bffb_process_pending_site_installs(): void {
 			// into another site's tables for whatever ran next.
 			restore_current_blog();
 		}
+
+		// It returned, so it did not die: drop the pessimistic marker.
+		$failed = array_values( array_diff( (array) get_site_option( 'bffb_failed_site_installs', array() ), array( $site_id ) ) );
+
+		if ( $failed ) {
+			update_site_option( 'bffb_failed_site_installs', $failed );
+		} else {
+			delete_site_option( 'bffb_failed_site_installs' );
+		}
 	}
 
-	delete_site_option( 'bffb_site_install_lock' );
+	bffb_release_install_lock();
 
 	if ( $pending ) {
 		update_site_option( 'bffb_pending_site_installs', $pending );
@@ -135,9 +204,30 @@ add_action(
 	// never appear where it was needed.
 	'all_admin_notices',
 	static function (): void {
-		$pending = get_site_option( 'bffb_pending_site_installs', array() );
+		// A single-site install can never have a network-install queue, so it
+		// should not pay for the lookup. Site options have no alloptions-style
+		// preload, so this is a real query on every admin request otherwise.
+		if ( ! is_multisite() || ! current_user_can( 'manage_network_options' ) ) {
+			return;
+		}
 
-		if ( ! is_array( $pending ) || ! $pending || ! current_user_can( 'manage_network_options' ) ) {
+		$pending = get_site_option( 'bffb_pending_site_installs', array() );
+		$failed  = (array) get_site_option( 'bffb_failed_site_installs', array() );
+
+		if ( $failed ) {
+			printf(
+				'<div class="notice notice-error"><p>%s</p></div>',
+				esc_html(
+					sprintf(
+						/* translators: %s: comma-separated site IDs */
+						__( 'FarmBooks could not create its tables on site(s) %s. Visit each one and reactivate the plugin there.', 'bluefairy-farmbooks' ),
+						implode( ', ', array_map( 'intval', $failed ) )
+					)
+				)
+			);
+		}
+
+		if ( ! is_array( $pending ) || ! $pending ) {
 			return;
 		}
 

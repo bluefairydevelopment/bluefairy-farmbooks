@@ -217,7 +217,6 @@ class TransactionEditPage {
 		 * @param int   $id   Saved transaction ID.
 		 * @param array $post Raw POST data — hook implementations must re-sanitize.
 		 */
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		// Checked, not assumed: both branches used to redirect with
 		// bffb_notice=saved regardless, so a write that failed - against a
 		// table a multisite rollout had not reached yet, say - reported
@@ -227,7 +226,8 @@ class TransactionEditPage {
 			exit;
 		}
 
-		do_action( 'bffb_transaction_saved', $id, $_POST );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified by check_admin_referer() above.
+		do_action( 'bffb_transaction_saved', $id, wp_unslash( $_POST ) );
 
 		wp_safe_redirect( admin_url( 'admin.php?page=bffb-transactions&bffb_notice=saved' ) );
 		exit;
@@ -246,7 +246,15 @@ class TransactionEditPage {
 		$table = $wpdb->prefix . 'bffb_transactions';
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$wpdb->delete( $table, array( 'id' => $id ), array( '%d' ) );
+		$deleted = $wpdb->delete( $table, array( 'id' => $id ), array( '%d' ) );
+
+		if ( ! $deleted ) {
+			// Either the write failed or the row was already gone. Reporting a
+			// deletion that did not happen is the same defect as reporting a
+			// save that did not happen.
+			wp_safe_redirect( admin_url( 'admin.php?page=bffb-transactions&bffb_notice=error' ) );
+			exit;
+		}
 
 		/**
 		 * Fires after a transaction is deleted.

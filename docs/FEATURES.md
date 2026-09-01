@@ -42,7 +42,8 @@
 | `bffb_transaction_deleted` | Action | After a transaction is deleted. |
 | `bffb_category_saved` | Action | After a category is written. Save your field here. |
 | `bffb_account_saved` | Action | After an account is written. Save your field here. |
-| `bffb_settings_tabs` | Filter | Adds a settings tab. The tab saves its own fields. |
+| `bffb_settings_tabs` | Filter | Adds a settings tab. |
+| `bffb_save_settings_tab` | Action | Save YOUR tab's fields here. |
 | `bffb_reports_list` | Filter | Filters the available reports list. |
 | `bffb_transaction_row_actions` | Filter | Row actions on the transactions list. |
 | `bffb_account_row_actions` | Filter | Row actions on the accounts list. |
@@ -52,6 +53,11 @@
 | `bffb_account_form_fields` | Filter | Markup only — see the note below. |
 | `bffb_category_in_use` | Filter | Declare a reference that should block a category delete. |
 | `bffb_account_in_use` | Filter | Declare a reference that should block an account delete. |
+
+**To save a settings tab you added, hook `bffb_save_settings_tab` — not
+`admin_post_bffb_save_settings`.** This plugin answers that action at priority
+10 and exits, so a handler registered at the default priority is appended after
+it and never runs.
 
 **To add a field to an edit form, use the `*_extra_fields` ACTION, not the
 `*_form_fields` filter.** The filters pass their return value through

@@ -30,6 +30,15 @@ final class Plugin {
 	 * Boot all plugin components.
 	 */
 	public function boot(): void {
+		// A plugin update replaces the files without deactivating, so the
+		// activation hook never fires and anything gated behind it reaches new
+		// installs only. Outside boot_admin() because is_admin() is false under
+		// WP-CLI, and a site administered entirely through `wp plugin update`
+		// would otherwise never migrate. Costs one autoloaded option read.
+		if ( is_admin() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+			( new Installer() )->maybe_upgrade();
+		}
+
 		$this->load_textdomain();
 
 		if ( is_admin() ) {
@@ -41,7 +50,7 @@ final class Plugin {
 		 * Pro and third-party plugins hook here to initialise their own components.
 		 *
 		 * The full seam list, which this block used to give incompletely - it
-		 * named six of the twenty-four and still advertised a filter that cannot do
+		 * named six of the twenty-five and still advertised a filter that cannot do
 		 * what it claims. A developer reads this first, so it has to be right.
 		 *
 		 * Lifecycle
@@ -53,7 +62,13 @@ final class Plugin {
 		 *   do_action('bffb_transactions_page_actions')
 		 *   do_action('bffb_accounts_page_actions')
 		 *   do_action('bffb_categories_page_actions')
-		 *   apply_filters('bffb_settings_tabs', $tabs)   — a tab added here saves its own fields
+		 *   apply_filters('bffb_settings_tabs', $tabs)   — adds a tab
+		 *   do_action('bffb_save_settings_tab', $tab, $post)
+		 *                                                — save YOUR tab's fields here.
+		 *                                                  Do NOT hook
+		 *                                                  admin_post_bffb_save_settings:
+		 *                                                  this plugin answers it at
+		 *                                                  priority 10 and exits.
 		 *   apply_filters('bffb_reports_list', $reports)
 		 *   do_action('bffb_render_report', $slug, $filters)
 		 *
@@ -97,10 +112,6 @@ final class Plugin {
 	}
 
 	private function boot_admin(): void {
-		// A plugin update replaces the files without deactivating, so the
-		// activation hook never fires. Anything gated behind it reaches new
-		// installs only. Costs one autoloaded option read on a current install.
-		( new Installer() )->maybe_upgrade();
 
 		$transaction_edit = new Admin\TransactionEditPage();
 

@@ -298,7 +298,15 @@ class AccountEditPage {
 		$table = $wpdb->prefix . 'bffb_accounts';
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$wpdb->delete( $table, array( 'id' => $id ), array( '%d' ) );
+		$deleted = $wpdb->delete( $table, array( 'id' => $id ), array( '%d' ) );
+
+		if ( ! $deleted ) {
+			// Either the write failed or the row was already gone. Reporting a
+			// deletion that did not happen is the same defect as reporting a
+			// save that did not happen.
+			wp_safe_redirect( admin_url( 'admin.php?page=bffb-accounts&bffb_notice=error' ) );
+			exit;
+		}
 
 		wp_safe_redirect( admin_url( 'admin.php?page=bffb-accounts&bffb_notice=deleted' ) );
 		exit;
