@@ -46,6 +46,24 @@ function bffb_plugin(): BlueFairy\FarmBooks\Plugin {
 }
 
 /**
+ * The GET_LOCK name for this install.
+ *
+ * GET_LOCK names are global to the MySQL SERVER, not scoped to a database - and
+ * on shared hosting DB_NAME and the table prefix are both guessable (cPanel
+ * naming conventions, and wp_ is near universal). A co-tenant who derived the
+ * name could squat on it and stall this network's install queue. AUTH_SALT is
+ * per-install and secret, so mixing it in makes the name underivable from
+ * outside while staying stable within the install.
+ */
+function bffb_install_lock_name(): string {
+	global $wpdb;
+
+	$secret = defined( 'AUTH_SALT' ) ? AUTH_SALT : '';
+
+	return substr( 'bffb_install_' . md5( DB_NAME . $wpdb->base_prefix . $secret ), 0, 60 );
+}
+
+/**
  * Shared re-entrancy counter for the install lock.
  *
  * @param int $delta +1 to claim, -1 to release, 0 to read.
@@ -93,9 +111,7 @@ function bffb_claim_install_lock(): bool {
 		return true;
 	}
 
-	// Namespaced by database and table prefix: GET_LOCK names are global to the
-	// MySQL server, and shared hosting puts many installs on one server.
-	$name = substr( 'bffb_install_' . md5( DB_NAME . $wpdb->base_prefix ), 0, 60 );
+	$name = bffb_install_lock_name();
 
 	// 0 = do not wait. Another process holding it means there is nothing for
 	// this one to do.
@@ -122,9 +138,7 @@ function bffb_release_install_lock(): void {
 		return;
 	}
 
-	$name = substr( 'bffb_install_' . md5( DB_NAME . $wpdb->base_prefix ), 0, 60 );
-
-	$wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $name ) );
+	$wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', bffb_install_lock_name() ) );
 }
 
 /**
