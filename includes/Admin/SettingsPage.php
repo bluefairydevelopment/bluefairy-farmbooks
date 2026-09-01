@@ -59,6 +59,22 @@ class SettingsPage {
 		// Only a real tab may steer the redirect.
 		$active_tab = array_key_exists( $requested_tab, $tabs ) ? $requested_tab : 'general';
 
+		/**
+		 * Fires so a tab added via bffb_settings_tabs can save its own fields.
+		 *
+		 * This handler runs on admin_post_bffb_save_settings at priority 10 and
+		 * exits, so an add-on that hooks the same action at the default
+		 * priority is appended after it and never runs. This action is the
+		 * seam that does: it fires before the redirect, for whatever tab the
+		 * form said it was on.
+		 *
+		 * @since 1.0.1
+		 * @param string               $requested_tab The tab the form was on.
+		 * @param array<string, mixed> $post          Raw POST. Re-sanitize before use.
+		 */
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified by check_admin_referer() above.
+		do_action( 'bffb_save_settings_tab', $requested_tab, wp_unslash( $_POST ) );
+
 		wp_safe_redirect(
 			add_query_arg(
 				array(
@@ -82,8 +98,10 @@ class SettingsPage {
 		/**
 		 * Filter the list of settings tabs.
 		 *
-		 * A tab added here renders its own fields and must save them itself:
-		 * this plugin's own save only ever runs for the General tab.
+		 * A tab added here renders its own fields and saves them itself, on
+		 * the bffb_save_settings_tab action - not by hooking
+		 * admin_post_bffb_save_settings, which this class already answers and
+		 * exits from. This plugin's own save only ever runs for General.
 		 *
 		 * @since 1.0.0
 		 * @param array<string, string> $tabs Associative array of tab slug => tab label.

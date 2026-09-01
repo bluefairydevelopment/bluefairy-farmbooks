@@ -23,7 +23,8 @@ class Installer {
 	 * Pro's own troubleshooting notes told operators to read it as the base
 	 * schema version.
 	 */
-	private const DB_VERSION = '2';
+	private const DB_VERSION    = '2';
+	private const VERSION_OPTION = 'bffb_db_version';
 
 
 	/**
@@ -36,6 +37,35 @@ class Installer {
 		$this->maybe_seed_settings();
 
 		$this->run_pending_migrations();
+		$this->record_version();
+	}
+
+	/**
+	 * Bring an existing install up to the current schema.
+	 *
+	 * Called on every admin request, gated on a wp_option so the healthy path
+	 * costs an autoloaded read and no query. WordPress replaces plugin files
+	 * on update without deactivating, so register_activation_hook never fires
+	 * and anything reachable only from activate() reaches new installs only -
+	 * which for a backfill written for existing installs is no reach at all.
+	 */
+	public function maybe_upgrade(): void {
+		if ( get_option( self::VERSION_OPTION ) === self::DB_VERSION ) {
+			return;
+		}
+
+		$this->install_tables();
+		$this->maybe_seed_accounts();
+		$this->maybe_seed_categories();
+		$this->maybe_seed_settings();
+		$this->run_pending_migrations();
+		$this->record_version();
+	}
+
+	private function record_version(): void {
+		// Both: the option is the cheap gate, the settings row is what Pro's
+		// troubleshooting notes tell an operator to read.
+		update_option( self::VERSION_OPTION, self::DB_VERSION, true );
 		$this->settings()->set( 'db_version', self::DB_VERSION );
 	}
 
@@ -43,7 +73,7 @@ class Installer {
 	 * One-shot migrations for installs that predate the current schema.
 	 */
 	private function run_pending_migrations(): void {
-		$from = (int) $this->settings()->get( 'db_version', 1 );
+		$from = (int) get_option( self::VERSION_OPTION, $this->settings()->get( 'db_version', 1 ) );
 
 		if ( $from < 2 ) {
 			$this->backfill_farm_name();
@@ -381,7 +411,10 @@ class Installer {
 			'fiscal_year_start' => '1',
 			'tax_year'          => (string) (int) wp_date( 'Y' ),
 			'currency_symbol'   => '$',
-			'db_version'        => self::DB_VERSION,
+			// db_version is NOT seeded here. maybe_seed_settings() runs before
+			// run_pending_migrations(), so seeding the current version stamped
+			// an install as migrated before anything had migrated it.
+			// record_version() is the only writer.
 		);
 
 		foreach ( $defaults as $key => $value ) {

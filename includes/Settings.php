@@ -17,6 +17,16 @@ class Settings {
 	private ?array $cache = null;
 
 	/**
+	 * Which blog the cache belongs to.
+	 *
+	 * Plugin::$settings is a singleton and survives switch_to_blog(), and the
+	 * network install and uninstall loops both switch blogs. Without this, the
+	 * first read after a switch would return the previous site's values from
+	 * cache, silently.
+	 */
+	private ?int $cache_blog_id = null;
+
+	/**
 	 * Get a setting value by key with optional fallback default.
 	 *
 	 * @param mixed $default
@@ -38,6 +48,8 @@ class Settings {
 	 * Uses INSERT … ON DUPLICATE KEY UPDATE to handle both insert and update.
 	 */
 	public function set( string $key, mixed $value ): void {
+		$this->cache = null;
+
 		global $wpdb;
 
 		$table        = $wpdb->prefix . 'bffb_settings';
@@ -74,6 +86,9 @@ class Settings {
 			'fiscal_year_start' => '1',
 			'tax_year'          => (string) (int) wp_date( 'Y' ),
 			'currency_symbol'   => '$',
+			// Deliberately 1, not Installer::DB_VERSION: a missing row must read
+			// as "never migrated" so the migrations run. Raising this to match
+			// the installer would silently disable every one of them.
 			'db_version'        => '1',
 		);
 	}
@@ -93,9 +108,13 @@ class Settings {
 	 * default. Raised, and it now says so in the log if it is ever reached.
 	 */
 	private function load_all(): array {
-		if ( $this->cache !== null ) {
+		$blog_id = function_exists( 'get_current_blog_id' ) ? get_current_blog_id() : 0;
+
+		if ( $this->cache !== null && $this->cache_blog_id === $blog_id ) {
 			return $this->cache;
 		}
+
+		$this->cache_blog_id = $blog_id;
 
 		global $wpdb;
 

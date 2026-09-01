@@ -200,13 +200,13 @@ class TransactionEditPage {
 
 		if ( $id > 0 ) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->update( $table, $data, array( 'id' => $id ), $formats, array( '%d' ) );
+			$written = $wpdb->update( $table, $data, array( 'id' => $id ), $formats, array( '%d' ) );
 		} else {
 			$data['created_by'] = get_current_user_id();
 			$formats[]          = '%d';
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->insert( $table, $data, $formats );
-			$id = (int) $wpdb->insert_id;
+			$written = $wpdb->insert( $table, $data, $formats );
+			$id      = (int) $wpdb->insert_id;
 		}
 
 		/**
@@ -218,6 +218,15 @@ class TransactionEditPage {
 		 * @param array $post Raw POST data — hook implementations must re-sanitize.
 		 */
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		// Checked, not assumed: both branches used to redirect with
+		// bffb_notice=saved regardless, so a write that failed - against a
+		// table a multisite rollout had not reached yet, say - reported
+		// success and fired bffb_transaction_saved with an id of 0.
+		if ( false === $written ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=bffb-transactions&bffb_notice=error' ) );
+			exit;
+		}
+
 		do_action( 'bffb_transaction_saved', $id, $_POST );
 
 		wp_safe_redirect( admin_url( 'admin.php?page=bffb-transactions&bffb_notice=saved' ) );

@@ -28,15 +28,44 @@
 ### Extension Hooks
 | Hook | Type | Description |
 |------|------|-------------|
-| `bffb_loaded` | Action | Fires after Lite is fully booted. |
-| `bffb_admin_menu_items` | Action | Fires after Lite submenus are registered. |
+| `bffb_loaded` | Action | Fires after the plugin is fully booted. |
+| `bffb_admin_menu_items` | Action | Fires after the submenus are registered. |
 | `bffb_dashboard_widgets` | Action | Fires inside the dashboard page. |
-| `bffb_settings_tabs` | Filter | Filters the settings tab list. |
+| `bffb_transactions_page_actions` | Action | Fires above the transactions list. |
+| `bffb_accounts_page_actions` | Action | Fires above the accounts list. |
+| `bffb_categories_page_actions` | Action | Fires above the categories list. |
+| `bffb_render_report` | Action | Renders a report added via `bffb_reports_list`. |
+| `bffb_transaction_extra_fields` | Action | Add a field to the transaction form. |
+| `bffb_category_extra_fields` | Action | Add a field to the category form. |
+| `bffb_account_extra_fields` | Action | Add a field to the account form. |
+| `bffb_transaction_saved` | Action | After a transaction is written. Save your field here. |
+| `bffb_transaction_deleted` | Action | After a transaction is deleted. |
+| `bffb_category_saved` | Action | After a category is written. Save your field here. |
+| `bffb_account_saved` | Action | After an account is written. Save your field here. |
+| `bffb_settings_tabs` | Filter | Adds a settings tab. The tab saves its own fields. |
 | `bffb_reports_list` | Filter | Filters the available reports list. |
-| `bffb_transaction_form_fields` | Filter | Filters transaction form fields (Phase 3). |
+| `bffb_transaction_row_actions` | Filter | Row actions on the transactions list. |
+| `bffb_account_row_actions` | Filter | Row actions on the accounts list. |
+| `bffb_category_row_actions` | Filter | Row actions on the categories list. |
+| `bffb_transaction_form_fields` | Filter | Markup only — see the note below. |
+| `bffb_category_form_fields` | Filter | Markup only — see the note below. |
+| `bffb_account_form_fields` | Filter | Markup only — see the note below. |
+| `bffb_category_in_use` | Filter | Declare a reference that should block a category delete. |
+| `bffb_account_in_use` | Filter | Declare a reference that should block an account delete. |
+
+**To add a field to an edit form, use the `*_extra_fields` ACTION, not the
+`*_form_fields` filter.** The filters pass their return value through
+`wp_kses_post()`, whose allowed tags include no `input`, `select`, `option` or
+`textarea` — so a filter can add markup around a field but never the field
+itself. Pair the action with the matching `*_saved` action, or your field will
+render, be typed into, and be discarded on save.
+
+The `*_in_use` filters must return `$in_use` **plus** your own count, never a
+bare number: returning a bare count would mask the references the plugin found
+itself and let a referenced row be deleted.
 
 ### Data Protection
-- All four Lite tables are preserved on deactivation and deletion by default.
+- All four tables are preserved on deactivation and deletion by default.
 - To drop data on uninstall: `define( 'BFFB_REMOVE_DATA', true );` in `wp-config.php`.
 
 ## Upcoming Phases

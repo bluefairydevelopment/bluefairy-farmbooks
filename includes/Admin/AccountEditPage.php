@@ -193,13 +193,23 @@ class AccountEditPage {
 
 		if ( $id > 0 ) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->update( $table, $data, array( 'id' => $id ), $formats, array( '%d' ) );
+			$written = $wpdb->update( $table, $data, array( 'id' => $id ), $formats, array( '%d' ) );
 		} else {
 			$data['is_default'] = 0;
 			$formats[]          = '%d';
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->insert( $table, $data, $formats );
-			$id = (int) $wpdb->insert_id;
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$written = $wpdb->insert( $table, $data, $formats );
+			$id      = (int) $wpdb->insert_id;
+		}
+
+		// The write is checked, not assumed. Both branches used to redirect
+		// with bffb_notice=saved regardless, so a failed write - against a
+		// table a multisite rollout had not created yet, say - told the farmer
+		// the row was saved and fired the *_saved action with an id of 0.
+		if ( false === $written ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=bffb-accounts&bffb_notice=error' ) );
+			exit;
 		}
 
 		/**

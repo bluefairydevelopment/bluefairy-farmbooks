@@ -39,7 +39,7 @@ spl_autoload_register(
 );
 
 /**
- * Global helper — allows Pro and third-party code to detect Lite without class_exists().
+ * Global helper — allows Pro and third-party code to detect the free plugin without class_exists().
  */
 function bffb_plugin(): BlueFairy\FarmBooks\Plugin {
 	return BlueFairy\FarmBooks\Plugin::instance();
@@ -60,12 +60,43 @@ function bffb_process_pending_site_installs(): void {
 		return;
 	}
 
+	// One run at a time. Two overlapping cron firings can both read the same
+	// pending array before either writes, and Installer::activate() seeds the
+	// default chart of accounts with a check-then-insert and no unique key -
+	// so a race duplicates every seeded row on that site.
+	if ( ! add_site_option( 'bffb_site_install_lock', time() ) ) {
+		$lock_age = time() - (int) get_site_option( 'bffb_site_install_lock', 0 );
+
+		if ( $lock_age < 300 ) {
+			return;
+		}
+
+		// A stale lock from a request that died holding it.
+		update_site_option( 'bffb_site_install_lock', time() );
+	}
+
+	// Schedule the continuation BEFORE the loop, not after it. Scheduling
+	// afterwards meant a fatal inside the loop - a stale blog row calling
+	// dead_db(), say - skipped it entirely, leaving a non-empty queue, no cron
+	// event, and an admin notice promising for ever that this "continues
+	// automatically in the background".
+	if ( ! wp_next_scheduled( 'bffb_continue_site_installs' ) ) {
+		wp_schedule_single_event( time() + 60, 'bffb_continue_site_installs' );
+	}
+
 	// Well inside a 30s max_execution_time, with room for the request's own
-	// overhead. Whatever is left over goes to the next cron run.
+	// overhead. Whatever is left over goes to that cron run.
 	$deadline = microtime( true ) + 15.0;
 
 	while ( $pending && microtime( true ) < $deadline ) {
 		$site_id = (int) array_shift( $pending );
+
+		// Advance the stored queue BEFORE attempting the site, not after. A
+		// fatal inside activate() - an E_ERROR in dbDelta on a crashed table,
+		// an out-of-memory on a large site - kills the request with that site
+		// still at the head, and every later run shifts the same site and dies
+		// the same way. One casualty blocked the whole network for ever.
+		update_site_option( 'bffb_pending_site_installs', $pending );
 
 		switch_to_blog( $site_id );
 
@@ -76,28 +107,33 @@ function bffb_process_pending_site_installs(): void {
 			// into another site's tables for whatever ran next.
 			restore_current_blog();
 		}
-
-		update_site_option( 'bffb_pending_site_installs', $pending );
 	}
+
+	delete_site_option( 'bffb_site_install_lock' );
 
 	if ( $pending ) {
 		update_site_option( 'bffb_pending_site_installs', $pending );
-
-		if ( ! wp_next_scheduled( 'bffb_continue_site_installs' ) ) {
-			wp_schedule_single_event( time() + 30, 'bffb_continue_site_installs' );
-		}
-
-		return;
+		return; // The continuation is already scheduled, above.
 	}
 
 	delete_site_option( 'bffb_pending_site_installs' );
+
+	$scheduled = wp_next_scheduled( 'bffb_continue_site_installs' );
+
+	if ( $scheduled ) {
+		wp_unschedule_event( $scheduled, 'bffb_continue_site_installs' );
+	}
 }
 
 add_action( 'bffb_continue_site_installs', 'bffb_process_pending_site_installs' );
 
 // A network admin who never triggers cron would otherwise wait for ever.
 add_action(
-	'admin_notices',
+	// all_admin_notices, not admin_notices: the latter fires only when NOT on
+	// a network-admin screen, and the screen a super admin lands on after
+	// Network Activate is precisely a network-admin screen. The notice could
+	// never appear where it was needed.
+	'all_admin_notices',
 	static function (): void {
 		$pending = get_site_option( 'bffb_pending_site_installs', array() );
 
@@ -141,7 +177,16 @@ register_activation_hook(
 			// - which is the exact failure this hook was added to prevent.
 			update_site_option(
 				'bffb_pending_site_installs',
-				array_map( 'intval', get_sites( array( 'fields' => 'ids', 'number' => 0 ) ) )
+				array_map( 'intval', get_sites(
+					array(
+						'fields'   => 'ids',
+						'number'   => 0,
+						// Archived, spam and deleted sites are not sites to install into.
+						'archived' => 0,
+						'spam'     => 0,
+						'deleted'  => 0,
+					)
+				) )
 			);
 
 			bffb_process_pending_site_installs();

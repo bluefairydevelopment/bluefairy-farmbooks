@@ -53,7 +53,7 @@ class AdminMenu {
 	}
 
 	/**
-	 * Register the top-level FarmBooks menu and Lite sub-pages.
+	 * Register the top-level FarmBooks menu and the free plugin's sub-pages.
 	 */
 	public function bffb_add_menu(): void {
 		$dashboard = $this->dashboard;
@@ -160,7 +160,7 @@ class AdminMenu {
 		);
 
 		/**
-		 * Fires after Lite sub-pages are registered.
+		 * Fires after the free plugin's sub-pages are registered.
 		 * Pro hooks here to add Vendors, Payroll, Budgets, and WooCommerce pages.
 		 *
 		 * @since 1.0.0

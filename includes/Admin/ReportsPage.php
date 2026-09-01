@@ -6,7 +6,7 @@ namespace BlueFairy\FarmBooks\Admin;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * FarmBooks Reports page — Lite tab shell + YTD Summary, Income List, Expense List.
+ * FarmBooks Reports page — tab shell + YTD Summary, Income List, Expense List.
  *
  * Pro adds tabs via apply_filters('bffb_reports_list') and renders them via
  * do_action('bffb_render_report', $slug, $filters).

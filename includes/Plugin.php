@@ -41,7 +41,7 @@ final class Plugin {
 		 * Pro and third-party plugins hook here to initialise their own components.
 		 *
 		 * The full seam list, which this block used to give incompletely - it
-		 * named six of eighteen and still advertised a filter that cannot do
+		 * named six of the twenty-four and still advertised a filter that cannot do
 		 * what it claims. A developer reads this first, so it has to be right.
 		 *
 		 * Lifecycle
@@ -97,6 +97,11 @@ final class Plugin {
 	}
 
 	private function boot_admin(): void {
+		// A plugin update replaces the files without deactivating, so the
+		// activation hook never fires. Anything gated behind it reaches new
+		// installs only. Costs one autoloaded option read on a current install.
+		( new Installer() )->maybe_upgrade();
+
 		$transaction_edit = new Admin\TransactionEditPage();
 
 		// DashboardPage is constructed HERE, not inside the admin_menu callback.

@@ -14,7 +14,7 @@ Farm income and expense tracking aligned to IRS Schedule F. Built for small fami
 - 10 default farm categories linked to their accounts
 - Settings: farm name, fiscal year start, tax year, currency symbol
 - Admin menu: Dashboard, Transactions, Reports, Settings
-- Extension hooks for Pro add-on (`bffb_loaded`, `bffb_admin_menu_items`, `bffb_settings_tabs`, `bffb_reports_list`, `bffb_dashboard_widgets`)
+- 24 extension hooks for the Pro add-on and third parties — the full list, with the two traps to avoid, is in [docs/FEATURES.md](docs/FEATURES.md#extension-hooks)
 
 ## Installation
 
@@ -46,11 +46,11 @@ FarmBooks Pro adds:
 - WooCommerce income sync
 - Licence key for automatic updates
 
-Both plugins must be active simultaneously. Pro boots after Lite (priority 20).
+Both plugins must be active simultaneously. Pro boots after the free plugin (plugins_loaded priority 20).
 
 ## Database Tables
 
-Lite creates four tables (all prefixed with your WordPress table prefix):
+the free plugin creates four tables (all prefixed with your WordPress table prefix):
 
 | Table | Purpose |
 |-------|---------|
