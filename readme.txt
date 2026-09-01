@@ -104,6 +104,10 @@ Support requests are handled at [bluefairydevelopment.com](https://bluefairydeve
 * Fixed: saving or deleting an account, category or transaction reported success whether or not it worked.
 * Added: a filter so a settings tab added by another plugin can report its own save.
 
+* Fixed: the install lock did not exclude anything, so two requests could seed the default chart of accounts twice - and the duplicates could not be deleted.
+* Fixed: activation recorded success even when the tables could not be created.
+* Security (Pro): the pay stub purge could be escaped with a symlink, and reported success when it had failed.
+
 = 1.0.0 =
 * Initial release.
 * Chart of accounts with 33 default Schedule F–aligned accounts.

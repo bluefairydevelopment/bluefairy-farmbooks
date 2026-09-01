@@ -50,6 +50,34 @@ Versioning follows Major.Minor.Patch: major = architecture shift, minor = new fe
 - Deleting one reported success the same way, including when the row was
   already gone.
 
+### Security
+- The pay stub purge could be made to delete anything. Its containment check
+  resolved the directory twice and the walk trusted the second answer, so
+  swapping `uploads/farmbooks/paystubs` for a symlink in between escaped it
+  entirely. It resolves once now, and refuses a root that is a link or that
+  resolves outside the uploads folder. (Pro.)
+- Every way that purge could fail recorded it as complete, so an ordinary
+  permissions problem reported the exposure as remediated with the files still
+  in place. Failures are now named on screen and in the log, and retried.
+  (Pro.)
+
+### Fixed
+- The install lock was not a lock. `add_option()` is an existence check
+  followed by `INSERT ... ON DUPLICATE KEY UPDATE`, so two callers racing to
+  create the row both succeeded and both believed they held it - and the
+  stale-recovery path had the second process delete the lock the first had just
+  taken. It uses MySQL's `GET_LOCK` now, which is held by the connection and
+  released by the server when a request dies.
+- Duplicate seeded rows are now impossible: the accounts and categories tables
+  carry a unique key on (name, type), and a migration removes duplicates an
+  earlier race created - which mattered because every seeded row is
+  `is_default = 1` and could not be deleted through the product.
+- Activation recorded the schema version whether or not the tables were
+  created, so a site whose database user lacks CREATE was stamped as current
+  and never retried, with the only diagnostic unreachable.
+- The upgrade path retried a failing install on every admin request and every
+  WP-CLI call, holding the install lock while it did.
+
 ## [1.0.0] — 2026-08-24
 
 ### Added

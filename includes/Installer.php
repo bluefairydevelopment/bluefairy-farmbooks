@@ -23,21 +23,86 @@ class Installer {
 	 * Pro's own troubleshooting notes told operators to read it as the base
 	 * schema version.
 	 */
-	private const DB_VERSION    = '2';
-	private const VERSION_OPTION      = 'bffb_db_version';
+	private const DB_VERSION    = '3';
+	private const VERSION_OPTION  = 'bffb_db_version';
+	private const ATTEMPTS_OPTION = 'bffb_install_attempts';
+	private const MAX_ATTEMPTS    = 3;
 
 
 	/**
 	 * Run on plugin activation.
 	 */
 	public function activate(): void {
-		$this->install_tables();
-		$this->maybe_seed_accounts();
-		$this->maybe_seed_categories();
-		$this->maybe_seed_settings();
+		// Locked, like maybe_upgrade(): register_activation_hook and
+		// wp_initialize_site are two more entry points into the same
+		// check-then-insert seeding, and only the queue's call was guarded.
+		$locked = bffb_claim_install_lock();
 
-		$this->run_pending_migrations();
-		$this->record_version();
+		try {
+			$this->install_tables();
+			$this->maybe_seed_accounts();
+			$this->maybe_seed_categories();
+			$this->maybe_seed_settings();
+
+			if ( ! $this->tables_exist() ) {
+				// Same reasoning as maybe_upgrade(): dbDelta neither throws nor
+				// reports failure, so recording the version here would stamp a
+				// site that has no tables as current - and the upgrade gate
+				// would then short-circuit for ever, with the only diagnostic
+				// unreachable.
+				$this->report_install_failure();
+				return;
+			}
+
+			$this->run_pending_migrations();
+			$this->record_version();
+			$this->clear_failed_site_marker();
+		} finally {
+			if ( $locked ) {
+				bffb_release_install_lock();
+			}
+		}
+	}
+
+	/**
+	 * Say that the tables could not be created, on whichever surface is here.
+	 */
+	private function report_install_failure(): void {
+		add_action( 'admin_notices', array( $this, 'notice_install_failed' ) );
+
+		// A site administered with `wp plugin update` never renders an admin
+		// notice, so the one signal there has to be the CLI's own.
+		if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( '\WP_CLI' ) ) {
+			\WP_CLI::warning( 'FarmBooks could not create its database tables. Check that the database user has CREATE permission.' );
+		}
+
+		error_log( 'FarmBooks: could not create its database tables on blog ' . get_current_blog_id() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+	}
+
+	/**
+	 * This site installed cleanly, so take it off the network failure list.
+	 *
+	 * The list is written pessimistically before each queued site and cleared
+	 * only by a later queue pass, so a site that self-healed through
+	 * maybe_upgrade() stayed named in the network-admin error banner for ever.
+	 */
+	private function clear_failed_site_marker(): void {
+		if ( ! is_multisite() ) {
+			return;
+		}
+
+		$failed = (array) get_site_option( 'bffb_failed_site_installs', array() );
+		$left   = array_values( array_diff( $failed, array( get_current_blog_id() ) ) );
+
+		if ( $left === $failed ) {
+			return;
+		}
+
+		if ( $left ) {
+			update_site_option( 'bffb_failed_site_installs', $left );
+		} else {
+			delete_site_option( 'bffb_failed_site_installs' );
+		}
 	}
 
 	/**
@@ -54,40 +119,50 @@ class Installer {
 			return;
 		}
 
-		// One at a time. The seeding below is a check-then-insert with no
-		// unique key behind it, so two admin requests arriving together on a
-		// site that has not been seeded yet both see COUNT(*) = 0 and both
-		// insert the whole default chart of accounts. add_option() is an
-		// INSERT against option_name's unique key - the atomic primitive
-		// available here; a second caller gets false and leaves.
-		// The SAME lock the network-install queue takes. They used to hold
-		// different ones, so the queue could be running activate() on this very
-		// site while this method seeded it from an admin request - both seeing
-		// COUNT(*) = 0, both inserting the whole default chart of accounts, and
-		// neither able to delete the duplicates afterwards because every seeded
-		// row is is_default = 1.
-		if ( ! bffb_claim_install_lock() ) {
-			return;
-		}
+		// A repair that cannot succeed must not be retried on every request.
+		// Without this, a site whose database user lacks CREATE re-ran four
+		// dbDelta calls and thirty-five failing INSERTs on every admin page
+		// load and every WP-CLI call, holding the install lock while it did.
+		$attempts = (int) get_option( self::ATTEMPTS_OPTION, 0 );
 
-		$this->install_tables();
-		$this->maybe_seed_accounts();
-		$this->maybe_seed_categories();
-		$this->maybe_seed_settings();
-		if ( ! $this->tables_exist() ) {
-			// dbDelta neither throws nor reports failure, so the only way to
-			// know whether it worked is to look. Recording the version anyway
-			// would short-circuit this method for ever on a site whose tables
-			// were never created.
-			bffb_release_install_lock();
+		if ( $attempts >= self::MAX_ATTEMPTS ) {
 			add_action( 'admin_notices', array( $this, 'notice_install_failed' ) );
 			return;
 		}
 
-		$this->run_pending_migrations();
-		$this->record_version();
+		// The SAME lock the network-install queue and activate() take. They
+		// used to hold different ones, so the queue could be running activate()
+		// on this very site while this method seeded it - both seeing
+		// COUNT(*) = 0, both inserting the whole default chart of accounts, and
+		// neither able to delete the duplicates afterwards because every seeded
+		// row is is_default = 1.
+		$locked = bffb_claim_install_lock();
 
-		bffb_release_install_lock();
+		try {
+			$this->install_tables();
+			$this->maybe_seed_accounts();
+			$this->maybe_seed_categories();
+			$this->maybe_seed_settings();
+
+			if ( ! $this->tables_exist() ) {
+				// dbDelta neither throws nor reports failure, so the only way
+				// to know whether it worked is to look. Recording the version
+				// anyway would short-circuit this method for ever on a site
+				// whose tables were never created.
+				update_option( self::ATTEMPTS_OPTION, $attempts + 1, false );
+				$this->report_install_failure();
+				return;
+			}
+
+			$this->run_pending_migrations();
+			$this->record_version();
+			delete_option( self::ATTEMPTS_OPTION );
+			$this->clear_failed_site_marker();
+		} finally {
+			if ( $locked ) {
+				bffb_release_install_lock();
+			}
+		}
 	}
 
 	/**
@@ -145,6 +220,10 @@ class Installer {
 		if ( $from < 2 ) {
 			$this->backfill_farm_name();
 		}
+
+		if ( $from < 3 ) {
+			$this->dedupe_and_lock_seeded_tables();
+		}
 	}
 
 	/**
@@ -157,6 +236,81 @@ class Installer {
 	 * nothing records which. It runs exactly once, on the first upgrade to
 	 * schema 2, so a farm that clears the field afterwards keeps it clear.
 	 */
+	/**
+	 * Remove duplicate seeded rows, then make duplicates impossible.
+	 *
+	 * The default chart of accounts and the default categories are seeded with
+	 * a COUNT(*) check followed by INSERTs, and nothing at the schema level
+	 * stopped two concurrent installs from doing it twice. Every seeded row is
+	 * is_default = 1, and the delete handlers refuse those - so a farm that hit
+	 * the race had a doubled chart it could not clean up.
+	 *
+	 * Dedupe keeps the lowest id of each (name, type) and repoints anything
+	 * that referenced a discarded twin, so no transaction is orphaned.
+	 */
+	private function dedupe_and_lock_seeded_tables(): void {
+		global $wpdb;
+
+		$accounts   = $wpdb->prefix . 'bffb_accounts';
+		$categories = $wpdb->prefix . 'bffb_categories';
+		$txns       = $wpdb->prefix . 'bffb_transactions';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Categories first: they point at accounts.
+		$wpdb->query(
+			"UPDATE `{$categories}` c
+			   JOIN ( SELECT name, type, MIN(id) AS keep_id FROM `{$accounts}` GROUP BY name, type ) k
+			     ON k.name = ( SELECT a.name FROM `{$accounts}` a WHERE a.id = c.account_id )
+			    AND k.type = ( SELECT a.type FROM `{$accounts}` a WHERE a.id = c.account_id )
+			    SET c.account_id = k.keep_id
+			  WHERE c.account_id IS NOT NULL"
+		);
+
+		$wpdb->query(
+			"DELETE a FROM `{$accounts}` a
+			   JOIN ( SELECT name, type, MIN(id) AS keep_id FROM `{$accounts}` GROUP BY name, type ) k
+			     ON k.name = a.name AND k.type = a.type
+			  WHERE a.id <> k.keep_id"
+		);
+
+		$wpdb->query(
+			"UPDATE `{$txns}` t
+			   JOIN ( SELECT name, type, MIN(id) AS keep_id FROM `{$categories}` GROUP BY name, type ) k
+			     ON k.name = ( SELECT c.name FROM `{$categories}` c WHERE c.id = t.category_id )
+			    AND k.type = ( SELECT c.type FROM `{$categories}` c WHERE c.id = t.category_id )
+			    SET t.category_id = k.keep_id
+			  WHERE t.category_id IS NOT NULL"
+		);
+
+		$wpdb->query(
+			"DELETE c FROM `{$categories}` c
+			   JOIN ( SELECT name, type, MIN(id) AS keep_id FROM `{$categories}` GROUP BY name, type ) k
+			     ON k.name = c.name AND k.type = c.type
+			  WHERE c.id <> k.keep_id"
+		);
+
+		// Now the constraint, so no future race can reintroduce them. Added
+		// here rather than in the CREATE TABLE statements because dbDelta will
+		// not add a unique key to a table that already holds duplicates, and
+		// this runs after they are gone.
+		foreach ( array( $accounts, $categories ) as $table ) {
+			$exists = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT COUNT(*) FROM information_schema.STATISTICS
+					  WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND INDEX_NAME = %s',
+					DB_NAME,
+					$table,
+					'uq_name_type'
+				)
+			);
+
+			if ( 0 === $exists ) {
+				$wpdb->query( "ALTER TABLE `{$table}` ADD UNIQUE KEY `uq_name_type` (`name`, `type`)" );
+			}
+		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
 	private function backfill_farm_name(): void {
 		$settings = $this->settings();
 
@@ -216,7 +370,8 @@ class Installer {
   `updated_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY  (id),
   KEY idx_type (type),
-  KEY idx_sort (sort_order)
+  KEY idx_sort (sort_order),
+  UNIQUE KEY uq_name_type (name, type)
 ) {$charset_collate};";
 
 		dbDelta( $sql_accounts );
@@ -236,7 +391,8 @@ class Installer {
   `updated_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY  (id),
   KEY idx_type (type),
-  KEY idx_account (account_id)
+  KEY idx_account (account_id),
+  UNIQUE KEY uq_name_type (name, type)
 ) {$charset_collate};";
 
 		dbDelta( $sql_categories );

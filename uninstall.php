@@ -40,6 +40,7 @@ function bffb_uninstall_this_site(): void {
 	}
 
 	delete_option( 'bffb_db_version' );
+	delete_option( 'bffb_install_attempts' );
 
 
 	// Anything else this plugin left in wp_options, including from a version that

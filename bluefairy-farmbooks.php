@@ -46,60 +46,48 @@ function bffb_plugin(): BlueFairy\FarmBooks\Plugin {
 }
 
 /**
- * Take the network-wide install lock, atomically.
+ * Take the network-wide install lock.
  *
- * add_option() on the MAIN site, not add_site_option(): the latter is a
- * check-then-act on multisite, because wp_sitemeta carries an ordinary KEY on
- * meta_key rather than a UNIQUE one - so two callers can both read "absent" and
- * both insert. wp_options DOES have a unique key on option_name, which makes
- * this INSERT the atomic primitive available here.
+ * MySQL's GET_LOCK, not an option row.
  *
- * @return bool True when this process now holds the lock.
+ * Three rounds of this used add_site_option() and then add_option(), on the
+ * belief that option_name's UNIQUE key makes the INSERT fail for a second
+ * caller. It does not: core's add_option() is a get_option() existence check
+ * followed by INSERT ... ON DUPLICATE KEY UPDATE, so two callers racing to
+ * create the row both succeed and both are told they hold the lock. The
+ * stale-recovery path was worse still - delete then add - where the second
+ * process deletes the lock the first has just taken.
+ *
+ * GET_LOCK is a real mutex, held by the CONNECTION. A request that dies drops
+ * its connection and the lock is released by the server, so there is no
+ * staleness window to guess at and no way to release someone else's lock.
+ *
+ * @return bool True when this process now holds it.
  */
 function bffb_claim_install_lock(): bool {
-	$main = is_multisite() ? get_main_site_id() : 0;
+	global $wpdb;
 
-	if ( $main ) {
-		switch_to_blog( $main );
-	}
+	// Namespaced by database and table prefix: GET_LOCK names are global to the
+	// MySQL server, and shared hosting puts many installs on one server.
+	$name = substr( 'bffb_install_' . md5( DB_NAME . $wpdb->base_prefix ), 0, 60 );
 
-	try {
-		if ( add_option( 'bffb_site_install_lock', time(), '', false ) ) {
-			return true;
-		}
+	// 0 = do not wait. Another process holding it means there is nothing for
+	// this one to do.
+	$got = $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', $name, 0 ) );
 
-		$age = time() - (int) get_option( 'bffb_site_install_lock', 0 );
-
-		if ( $age < 300 ) {
-			return false;
-		}
-
-		// A lock left by a request that died. Retake it the same atomic way, so
-		// two processes recovering the same stale lock cannot both continue.
-		delete_option( 'bffb_site_install_lock' );
-
-		return (bool) add_option( 'bffb_site_install_lock', time(), '', false );
-	} finally {
-		if ( $main ) {
-			restore_current_blog();
-		}
-	}
+	// 1 = acquired, 0 = held elsewhere, NULL = the server refused (permissions,
+	// or a proxy that does not support it). NULL means we cannot serialise;
+	// proceed anyway, because the seeded tables now carry unique keys that stop
+	// a race from duplicating anything.
+	return '0' !== (string) $got;
 }
 
 function bffb_release_install_lock(): void {
-	$main = is_multisite() ? get_main_site_id() : 0;
+	global $wpdb;
 
-	if ( $main ) {
-		switch_to_blog( $main );
-	}
+	$name = substr( 'bffb_install_' . md5( DB_NAME . $wpdb->base_prefix ), 0, 60 );
 
-	try {
-		delete_option( 'bffb_site_install_lock' );
-	} finally {
-		if ( $main ) {
-			restore_current_blog();
-		}
-	}
+	$wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $name ) );
 }
 
 /**
@@ -138,6 +126,7 @@ function bffb_process_pending_site_installs(): void {
 
 	// Well inside a 30s max_execution_time, with room for the request's own
 	// overhead. Whatever is left over goes to that cron run.
+	$failed   = (array) get_site_option( 'bffb_failed_site_installs', array() );
 	$deadline = microtime( true ) + 15.0;
 
 	while ( $pending && microtime( true ) < $deadline ) {
@@ -154,7 +143,10 @@ function bffb_process_pending_site_installs(): void {
 		// the queue before the attempt is right for liveness, but with nothing
 		// recording the casualty the counter simply reached zero and the notice
 		// disappeared - which reads as success.
-		$failed   = (array) get_site_option( 'bffb_failed_site_installs', array() );
+		//
+		// $failed is carried in memory across the batch; it used to be re-read
+		// from the database twice per site, inside the very time budget the
+		// batching exists to protect.
 		$failed[] = $site_id;
 		update_site_option( 'bffb_failed_site_installs', array_values( array_unique( $failed ) ) );
 
@@ -169,7 +161,7 @@ function bffb_process_pending_site_installs(): void {
 		}
 
 		// It returned, so it did not die: drop the pessimistic marker.
-		$failed = array_values( array_diff( (array) get_site_option( 'bffb_failed_site_installs', array() ), array( $site_id ) ) );
+		$failed = array_values( array_diff( $failed, array( $site_id ) ) );
 
 		if ( $failed ) {
 			update_site_option( 'bffb_failed_site_installs', $failed );
