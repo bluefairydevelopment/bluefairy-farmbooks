@@ -203,9 +203,19 @@ class AccountEditPage {
 		// through the category, an orphan silently drops those amounts off the
 		// tax report rather than showing them as unassigned.
 		global $wpdb;
+		// BOTH relationships, not just the direct one.
+		//
+		// t.account_id is NULL on nearly every transaction — the account is
+		// normally reached through the category — so checking only that column
+		// reported "safe to delete" on exactly the case this guard exists to
+		// catch: an account with no direct transactions but a category, and
+		// forty sales, pointing at it.
 		$in_use = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM `{$wpdb->prefix}bffb_transactions` WHERE account_id = %d" , $id
+				"SELECT ( SELECT COUNT(*) FROM `{$wpdb->prefix}bffb_transactions` WHERE account_id = %d )
+				       + ( SELECT COUNT(*) FROM `{$wpdb->prefix}bffb_categories` WHERE account_id = %d )",
+				$id,
+				$id
 			)
 		);
 

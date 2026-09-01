@@ -1,4 +1,4 @@
-=== BlueFairy FarmBooks Lite ===
+=== BlueFairy FarmBooks ===
 Contributors: bluefairydevelopment
 Tags: farm accounting, schedule f, income expense, agriculture, bookkeeping
 Requires at least: 6.4
@@ -12,11 +12,11 @@ Farm income and expense tracking aligned to IRS Schedule F — free for small fa
 
 == Description ==
 
-BlueFairy FarmBooks Lite gives small family farms a dedicated accounting ledger inside WordPress, built around the IRS Schedule F line structure so tax preparation is straightforward.
+BlueFairy FarmBooks gives small family farms a dedicated accounting ledger inside WordPress, built around the IRS Schedule F line structure so tax preparation is straightforward.
 
-FarmBooks Lite is designed for farmers who want to stop wrestling with spreadsheets or generic accounting software that has no idea what a "custom hire" expense is. Every category, every account, and every report is built around how the IRS actually asks farms to report their income and expenses.
+FarmBooks is designed for farmers who want to stop wrestling with spreadsheets or generic accounting software that has no idea what a "custom hire" expense is. Every category, every account, and every report is built around how the IRS actually asks farms to report their income and expenses.
 
-**Included in FarmBooks Lite:**
+**Included in FarmBooks:**
 
 * Chart of accounts with 33 default Schedule F accounts (income lines 1–9, expense lines 10–32)
 * 10 default farm categories linked to their accounts
@@ -27,16 +27,16 @@ FarmBooks Lite is designed for farmers who want to stop wrestling with spreadshe
 * Settings: farm name, fiscal year start, tax year, currency symbol
 * Extension hooks so it can be extended (see below)
 
-**Extending FarmBooks Lite:**
+**Extending FarmBooks:**
 
-FarmBooks Lite exposes a set of `do_action` and `apply_filters` hooks so developers can add vendors, custom categories, budgets, payroll, or reports without patching the core plugin. The full hook list is documented in the plugin's `docs/FEATURES.md`.
+FarmBooks exposes a set of `do_action` and `apply_filters` hooks so developers can add vendors, custom categories, budgets, payroll, or reports without patching the core plugin. The full hook list is documented in the plugin's `docs/FEATURES.md`.
 
 == Installation ==
 
 **Automatic install:**
 
 1. In WordPress admin go to **Plugins → Add New**.
-2. Search for "BlueFairy FarmBooks Lite".
+2. Search for "BlueFairy FarmBooks".
 3. Click **Install Now**, then **Activate**.
 
 **Zip upload:**
@@ -57,7 +57,7 @@ FarmBooks Lite exposes a set of `do_action` and `apply_filters` hooks so develop
 
 = Does this replace QuickBooks? =
 
-FarmBooks Lite handles farm income and expense tracking aligned to Schedule F. It is not a full double-entry accounting system, but it covers the core record-keeping most small farms need for tax preparation and gives you Schedule F line totals your accountant can file directly.
+FarmBooks handles farm income and expense tracking aligned to Schedule F. It is not a full double-entry accounting system, but it covers the core record-keeping most small farms need for tax preparation and gives you Schedule F line totals your accountant can file directly.
 
 = Where does the data live? =
 
@@ -69,11 +69,11 @@ Yes. Deactivation preserves all data. To remove all FarmBooks data from the data
 
 = Can I import historical transactions? =
 
-Not in the Lite version. General CSV import is on the roadmap. If you sell farm products through WooCommerce, the FarmBooks Pro add-on can bulk-import all completed historical orders as income transactions.
+Not in the version. General CSV import is on the roadmap. If you sell farm products through WooCommerce, the FarmBooks Pro add-on can bulk-import all completed historical orders as income transactions.
 
 = Can I customise the chart of accounts? =
 
-Lite ships a fixed Schedule F–aligned chart of accounts (read-only). Custom accounts and categories are available in the Pro add-on.
+the free plugin ships a fixed Schedule F–aligned chart of accounts (read-only). Custom accounts and categories are available in the Pro add-on.
 
 = Does it support multiple farms? =
 

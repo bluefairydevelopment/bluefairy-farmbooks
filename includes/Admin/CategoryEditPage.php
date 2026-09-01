@@ -213,7 +213,7 @@ class CategoryEditPage {
 
 		if ( $in_use > 0 ) {
 			wp_safe_redirect(
-				admin_url( 'admin.php?page=bffb-categorys&bffb_notice=in_use' )
+				admin_url( 'admin.php?page=bffb-categories&bffb_notice=in_use' )
 			);
 			exit;
 		}
