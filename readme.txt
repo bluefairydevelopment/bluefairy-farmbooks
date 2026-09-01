@@ -101,6 +101,9 @@ Support requests are handled at [bluefairydevelopment.com](https://bluefairydeve
 * Fixed: tables are created and removed on every site of a multisite network.
 * Added: extension actions for adding and saving custom fields on the account and category forms, and filters to veto a delete.
 
+* Fixed: saving or deleting an account, category or transaction reported success whether or not it worked.
+* Added: a filter so a settings tab added by another plugin can report its own save.
+
 = 1.0.0 =
 * Initial release.
 * Chart of accounts with 33 default Schedule F–aligned accounts.

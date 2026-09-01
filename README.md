@@ -14,7 +14,7 @@ Farm income and expense tracking aligned to IRS Schedule F. Built for small fami
 - 10 default farm categories linked to their accounts
 - Settings: farm name, fiscal year start, tax year, currency symbol
 - Admin menu: Dashboard, Transactions, Reports, Settings
-- 25 extension hooks for the Pro add-on and third parties — the full list, with the two traps to avoid, is in [docs/FEATURES.md](docs/FEATURES.md#extension-hooks)
+- 26 extension hooks for the Pro add-on and third parties — the full list, with the two traps to avoid, is in [docs/FEATURES.md](docs/FEATURES.md#extension-hooks)
 
 ## Installation
 

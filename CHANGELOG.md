@@ -39,6 +39,17 @@ Versioning follows Major.Minor.Patch: major = architecture shift, minor = new fe
 - `Settings::fiscal_year_start_date()`, the single owner of the year-to-date
   window that free and Pro both render on the same screen.
 
+### Added
+- `bffb_settings_saved_notice` filter, so a tab added through
+  `bffb_settings_tabs` can report its own save. Without it the screen said
+  "Nothing was saved" over a save that had just succeeded.
+
+### Fixed
+- Saving an account, category or transaction reported success whether or not
+  the write happened, and the `*_saved` action fired with an ID of 0.
+- Deleting one reported success the same way, including when the row was
+  already gone.
+
 ## [1.0.0] — 2026-08-24
 
 ### Added

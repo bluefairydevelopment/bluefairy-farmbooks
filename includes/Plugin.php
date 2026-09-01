@@ -50,7 +50,7 @@ final class Plugin {
 		 * Pro and third-party plugins hook here to initialise their own components.
 		 *
 		 * The full seam list, which this block used to give incompletely - it
-		 * named six of the twenty-five and still advertised a filter that cannot do
+		 * named six of the twenty-six and still advertised a filter that cannot do
 		 * what it claims. A developer reads this first, so it has to be right.
 		 *
 		 * Lifecycle
@@ -65,6 +65,10 @@ final class Plugin {
 		 *   apply_filters('bffb_settings_tabs', $tabs)   — adds a tab
 		 *   do_action('bffb_save_settings_tab', $tab, $post)
 		 *                                                — save YOUR tab's fields here.
+		 *   apply_filters('bffb_settings_saved_notice', $notice, $tab)
+		 *                                                — and say so afterwards, or the
+		 *                                                  screen reports "Nothing was
+		 *                                                  saved" over your save.
 		 *                                                  Do NOT hook
 		 *                                                  admin_post_bffb_save_settings:
 		 *                                                  this plugin answers it at

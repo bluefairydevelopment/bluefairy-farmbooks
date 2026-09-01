@@ -44,6 +44,7 @@
 | `bffb_account_saved` | Action | After an account is written. Save your field here. |
 | `bffb_settings_tabs` | Filter | Adds a settings tab. |
 | `bffb_save_settings_tab` | Action | Save YOUR tab's fields here. |
+| `bffb_settings_saved_notice` | Filter | Change the notice shown after a save. |
 | `bffb_reports_list` | Filter | Filters the available reports list. |
 | `bffb_transaction_row_actions` | Filter | Row actions on the transactions list. |
 | `bffb_account_row_actions` | Filter | Row actions on the accounts list. |
@@ -55,7 +56,9 @@
 | `bffb_account_in_use` | Filter | Declare a reference that should block an account delete. |
 
 **To save a settings tab you added, hook `bffb_save_settings_tab` — not
-`admin_post_bffb_save_settings`.** This plugin answers that action at priority
+`admin_post_bffb_save_settings`.** Then return `'saved'` from
+`bffb_settings_saved_notice`, or the screen will tell the user nothing was
+saved over a save that succeeded. This plugin answers that action at priority
 10 and exits, so a handler registered at the default priority is appended after
 it and never runs.
 
