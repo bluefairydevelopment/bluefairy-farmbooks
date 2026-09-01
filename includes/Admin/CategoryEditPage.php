@@ -210,7 +210,15 @@ class CategoryEditPage {
 		// table a multisite rollout had not created yet, say - told the farmer
 		// the row was saved and fired the *_saved action with an id of 0.
 		if ( false === $written ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=bffb-categories&bffb_notice=error' ) );
+			// Distinguish "that name is already taken" from a general failure.
+			// The unique key on (name, type) makes this the commonest way a
+			// save fails now, and "Could not save" told the farmer nothing
+			// while discarding everything they had typed.
+			$notice = ( false !== stripos( (string) $wpdb->last_error, 'duplicate' ) )
+				? 'duplicate'
+				: 'error';
+
+			wp_safe_redirect( admin_url( 'admin.php?page=bffb-categories&bffb_notice=' . $notice ) );
 			exit;
 		}
 

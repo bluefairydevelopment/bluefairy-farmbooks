@@ -203,15 +203,26 @@ function bffb_process_pending_site_installs(): void {
 
 		switch_to_blog( $site_id );
 
+		$installed = false;
+
 		try {
-			( new BlueFairy\FarmBooks\Installer() )->activate();
+			// The RETURN value, not merely "it did not throw". A site whose
+			// tables could not be created returns normally, and clearing the
+			// marker on that basis removed the one signal a network admin would
+			// ever see - admin_notices does not render from a cron-invoked
+			// queue, and nobody reads debug.log.
+			$installed = ( new BlueFairy\FarmBooks\Installer() )->activate();
 		} finally {
 			// In a finally: a throw here used to leave the request switched
 			// into another site's tables for whatever ran next.
 			restore_current_blog();
 		}
 
-		// It returned, so it did not die: drop the pessimistic marker.
+		if ( ! $installed ) {
+			continue; // Leave it on the failed list, and say so in the notice.
+		}
+
+		// It installed: drop the pessimistic marker.
 		$failed = array_values( array_diff( $failed, array( $site_id ) ) );
 
 		if ( $failed ) {

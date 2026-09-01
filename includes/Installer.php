@@ -25,14 +25,15 @@ class Installer {
 	 */
 	private const DB_VERSION    = '3';
 	private const VERSION_OPTION  = 'bffb_db_version';
-	private const ATTEMPTS_OPTION = 'bffb_install_attempts';
+	private const ATTEMPTS_OPTION         = 'bffb_install_attempts';
+	private const ATTEMPTS_VERSION_OPTION = 'bffb_install_attempts_for';
 	private const MAX_ATTEMPTS    = 3;
 
 
 	/**
 	 * Run on plugin activation.
 	 */
-	public function activate(): void {
+	public function activate(): bool {
 		// Locked, like maybe_upgrade(): register_activation_hook and
 		// wp_initialize_site are two more entry points into the same
 		// check-then-insert seeding, and only the queue's call was guarded.
@@ -40,9 +41,17 @@ class Installer {
 
 		try {
 			$this->install_tables();
-			$this->maybe_seed_accounts();
-			$this->maybe_seed_categories();
-			$this->maybe_seed_settings();
+
+			// Seed only while actually holding the lock. Proceeding without it
+			// was justified by the unique key catching a race - which is not
+			// true on an install where the key could not be added (a host
+			// without ALTER, or a farm whose own row collides with a seeded
+			// name). Another process holds the lock and is doing this anyway.
+			if ( $locked ) {
+				$this->maybe_seed_accounts();
+				$this->maybe_seed_categories();
+				$this->maybe_seed_settings();
+			}
 
 			if ( ! $this->tables_exist() ) {
 				// Same reasoning as maybe_upgrade(): dbDelta neither throws nor
@@ -51,12 +60,15 @@ class Installer {
 				// would then short-circuit for ever, with the only diagnostic
 				// unreachable.
 				$this->report_install_failure();
-				return;
+				return false;
 			}
 
 			$this->run_pending_migrations();
 			$this->record_version();
+			delete_option( self::ATTEMPTS_OPTION );
 			$this->clear_failed_site_marker();
+
+			return true;
 		} finally {
 			if ( $locked ) {
 				bffb_release_install_lock();
@@ -123,6 +135,13 @@ class Installer {
 		// Without this, a site whose database user lacks CREATE re-ran four
 		// dbDelta calls and thirty-five failing INSERTs on every admin page
 		// load and every WP-CLI call, holding the install lock while it did.
+		// A new release carrying new migrations must not be blocked by a counter
+		// the previous one exhausted. Moving DB_VERSION resets it.
+		if ( (string) get_option( self::ATTEMPTS_VERSION_OPTION, '' ) !== self::DB_VERSION ) {
+			delete_option( self::ATTEMPTS_OPTION );
+			update_option( self::ATTEMPTS_VERSION_OPTION, self::DB_VERSION, false );
+		}
+
 		$attempts = (int) get_option( self::ATTEMPTS_OPTION, 0 );
 
 		if ( $attempts >= self::MAX_ATTEMPTS ) {
@@ -140,9 +159,17 @@ class Installer {
 
 		try {
 			$this->install_tables();
-			$this->maybe_seed_accounts();
-			$this->maybe_seed_categories();
-			$this->maybe_seed_settings();
+
+			// Seed only while actually holding the lock. Proceeding without it
+			// was justified by the unique key catching a race - which is not
+			// true on an install where the key could not be added (a host
+			// without ALTER, or a farm whose own row collides with a seeded
+			// name). Another process holds the lock and is doing this anyway.
+			if ( $locked ) {
+				$this->maybe_seed_accounts();
+				$this->maybe_seed_categories();
+				$this->maybe_seed_settings();
+			}
 
 			if ( ! $this->tables_exist() ) {
 				// dbDelta neither throws nor reports failure, so the only way
@@ -254,46 +281,151 @@ class Installer {
 		$accounts   = $wpdb->prefix . 'bffb_accounts';
 		$categories = $wpdb->prefix . 'bffb_categories';
 		$txns       = $wpdb->prefix . 'bffb_transactions';
+		$budgets    = $wpdb->prefix . 'bffb_budgets';
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		// Categories first: they point at accounts.
-		$wpdb->query(
-			"UPDATE `{$categories}` c
-			   JOIN ( SELECT name, type, MIN(id) AS keep_id FROM `{$accounts}` GROUP BY name, type ) k
-			     ON k.name = ( SELECT a.name FROM `{$accounts}` a WHERE a.id = c.account_id )
-			    AND k.type = ( SELECT a.type FROM `{$accounts}` a WHERE a.id = c.account_id )
-			    SET c.account_id = k.keep_id
-			  WHERE c.account_id IS NOT NULL"
-		);
+
+		// ONLY seeded rows. The first version of this had no is_default
+		// predicate, so a farm that had created its own "supplies" beside the
+		// seeded "Supplies" - the same string under a case-insensitive
+		// collation - lost its own row, with its own Schedule F line and
+		// description, and could not recreate it. The duplicates this migration
+		// exists for are all seeded, by definition: they came from the same
+		// seeder running twice.
+		$keep_accounts = "SELECT name, type, MIN(id) AS keep_id FROM `{$accounts}` WHERE is_default = 1 GROUP BY name, type";
+		$keep_cats     = "SELECT name, type, MIN(id) AS keep_id FROM `{$categories}` WHERE is_default = 1 GROUP BY name, type";
+
+		// Repoint every reference BEFORE deleting anything.
+		//
+		// transactions.account_id was missed the first time. Schedule F
+		// resolves the account as COALESCE(t.account_id, c.account_id), so the
+		// direct column WINS over the correctly repointed category - and a
+		// transaction pointing at a deleted twin dropped out of the report
+		// entirely, understating the deduction on a filed tax form.
+		foreach ( array(
+			array( $categories, 'c', 'account_id', $accounts, $keep_accounts ),
+			array( $txns, 't', 'account_id', $accounts, $keep_accounts ),
+			array( $txns, 't', 'category_id', $categories, $keep_cats ),
+		) as list( $table, $alias, $column, $target, $keep_sql ) ) {
+			$wpdb->query(
+				"UPDATE `{$table}` {$alias}
+				   JOIN `{$target}` src ON src.id = {$alias}.{$column}
+				   JOIN ( {$keep_sql} ) k ON k.name = src.name AND k.type = src.type
+				    SET {$alias}.{$column} = k.keep_id
+				  WHERE {$alias}.{$column} IS NOT NULL
+				    AND src.is_default = 1"
+			);
+		}
+
+		// Pro's budgets, if Pro has ever been installed here. uq_category_year
+		// means a repoint can collide, so discard the duplicate budget rather
+		// than fail the statement - the surviving category keeps its own.
+		if ( $this->table_exists( $budgets ) ) {
+			$wpdb->query(
+				"DELETE b FROM `{$budgets}` b
+				   JOIN `{$categories}` src ON src.id = b.category_id
+				   JOIN ( {$keep_cats} ) k ON k.name = src.name AND k.type = src.type
+				  WHERE src.is_default = 1
+				    AND b.category_id <> k.keep_id
+				    AND EXISTS ( SELECT 1 FROM ( SELECT * FROM `{$budgets}` ) b2
+				                  WHERE b2.category_id = k.keep_id AND b2.tax_year = b.tax_year )"
+			);
+
+			$wpdb->query(
+				"UPDATE `{$budgets}` b
+				   JOIN `{$categories}` src ON src.id = b.category_id
+				   JOIN ( {$keep_cats} ) k ON k.name = src.name AND k.type = src.type
+				    SET b.category_id = k.keep_id
+				  WHERE src.is_default = 1"
+			);
+		}
+
+		// Pro's WooCommerce mapping holds category ids in options, where no
+		// JOIN can reach them. Left behind, every synced order after this
+		// migration would be written against an id pointing at nothing.
+		$this->repoint_wc_category_options( $categories, $keep_cats );
 
 		$wpdb->query(
 			"DELETE a FROM `{$accounts}` a
-			   JOIN ( SELECT name, type, MIN(id) AS keep_id FROM `{$accounts}` GROUP BY name, type ) k
-			     ON k.name = a.name AND k.type = a.type
-			  WHERE a.id <> k.keep_id"
-		);
-
-		$wpdb->query(
-			"UPDATE `{$txns}` t
-			   JOIN ( SELECT name, type, MIN(id) AS keep_id FROM `{$categories}` GROUP BY name, type ) k
-			     ON k.name = ( SELECT c.name FROM `{$categories}` c WHERE c.id = t.category_id )
-			    AND k.type = ( SELECT c.type FROM `{$categories}` c WHERE c.id = t.category_id )
-			    SET t.category_id = k.keep_id
-			  WHERE t.category_id IS NOT NULL"
+			   JOIN ( {$keep_accounts} ) k ON k.name = a.name AND k.type = a.type
+			  WHERE a.is_default = 1 AND a.id <> k.keep_id"
 		);
 
 		$wpdb->query(
 			"DELETE c FROM `{$categories}` c
-			   JOIN ( SELECT name, type, MIN(id) AS keep_id FROM `{$categories}` GROUP BY name, type ) k
-			     ON k.name = c.name AND k.type = c.type
-			  WHERE c.id <> k.keep_id"
+			   JOIN ( {$keep_cats} ) k ON k.name = c.name AND k.type = c.type
+			  WHERE c.is_default = 1 AND c.id <> k.keep_id"
 		);
 
-		// Now the constraint, so no future race can reintroduce them. Added
-		// here rather than in the CREATE TABLE statements because dbDelta will
-		// not add a unique key to a table that already holds duplicates, and
-		// this runs after they are gone.
+		$this->add_seeded_unique_keys( $accounts, $categories );
+
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
+	/**
+	 * Move Pro's stored category ids onto the surviving row.
+	 */
+	private function repoint_wc_category_options( string $categories, string $keep_sql ): void {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows = (array) $wpdb->get_results(
+			"SELECT src.id AS old_id, k.keep_id
+			   FROM `{$categories}` src
+			   JOIN ( {$keep_sql} ) k ON k.name = src.name AND k.type = src.type
+			  WHERE src.is_default = 1 AND src.id <> k.keep_id"
+		);
+
+		if ( ! $rows ) {
+			return;
+		}
+
+		$map = array();
+
+		foreach ( $rows as $row ) {
+			$map[ (int) $row->old_id ] = (int) $row->keep_id;
+		}
+
+		$default = (int) get_option( 'bffbp_wc_default_category_id', 0 );
+
+		if ( isset( $map[ $default ] ) ) {
+			update_option( 'bffbp_wc_default_category_id', $map[ $default ], false );
+		}
+
+		$wc_map = get_option( 'bffbp_wc_category_map', array() );
+
+		if ( is_array( $wc_map ) ) {
+			$changed = false;
+
+			foreach ( $wc_map as $key => $value ) {
+				if ( isset( $map[ (int) $value ] ) ) {
+					$wc_map[ $key ] = $map[ (int) $value ];
+					$changed        = true;
+				}
+			}
+
+			if ( $changed ) {
+				update_option( 'bffbp_wc_category_map', $wc_map, false );
+			}
+		}
+	}
+
+	/**
+	 * Add the unique key, but only when it can actually be added.
+	 *
+	 * The ALTER's result used to be discarded and the schema version stamped
+	 * regardless - so on a host that grants CREATE but not ALTER the site was
+	 * recorded at this schema with no unique key at all, while the install lock
+	 * proceeds on a failed claim precisely BECAUSE the key is supposed to be
+	 * there. And a farm whose own row collides with a seeded one under a
+	 * case-insensitive collation cannot take the key at all; that is their data,
+	 * so the key is skipped rather than their row deleted.
+	 */
+	private function add_seeded_unique_keys( string $accounts, string $categories ): void {
+		global $wpdb;
+
 		foreach ( array( $accounts, $categories ) as $table ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$exists = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					'SELECT COUNT(*) FROM information_schema.STATISTICS
@@ -304,11 +436,36 @@ class Installer {
 				)
 			);
 
-			if ( 0 === $exists ) {
-				$wpdb->query( "ALTER TABLE `{$table}` ADD UNIQUE KEY `uq_name_type` (`name`, `type`)" );
+			if ( 0 !== $exists ) {
+				continue;
+			}
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$collisions = (int) $wpdb->get_var(
+				"SELECT COUNT(*) FROM ( SELECT name, type FROM `{$table}` GROUP BY name, type HAVING COUNT(*) > 1 ) d"
+			);
+
+			if ( $collisions > 0 ) {
+				// Rows the farm created that clash with a seeded name. Adding
+				// the key would fail; deleting theirs is not ours to do.
+				error_log( "FarmBooks: could not add uq_name_type to {$table} - {$collisions} duplicate name/type pair(s) remain, at least one of them user-created." ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				continue;
+			}
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			if ( false === $wpdb->query( "ALTER TABLE `{$table}` ADD UNIQUE KEY `uq_name_type` (`name`, `type`)" ) ) {
+				error_log( "FarmBooks: could not add uq_name_type to {$table}; the database user may lack ALTER." ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			}
 		}
-		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
+	private function table_exists( string $table ): bool {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		return (string) $wpdb->get_var(
+			$wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) )
+		) === $table;
 	}
 
 	private function backfill_farm_name(): void {
@@ -370,8 +527,7 @@ class Installer {
   `updated_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY  (id),
   KEY idx_type (type),
-  KEY idx_sort (sort_order),
-  UNIQUE KEY uq_name_type (name, type)
+  KEY idx_sort (sort_order)
 ) {$charset_collate};";
 
 		dbDelta( $sql_accounts );
@@ -391,8 +547,7 @@ class Installer {
   `updated_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY  (id),
   KEY idx_type (type),
-  KEY idx_account (account_id),
-  UNIQUE KEY uq_name_type (name, type)
+  KEY idx_account (account_id)
 ) {$charset_collate};";
 
 		dbDelta( $sql_categories );
@@ -533,10 +688,15 @@ class Installer {
 		 * @return int|null
 		 */
 		$get_account_id = function ( string $name ) use ( $wpdb, $acc_table ): ?int {
+			// Ordered and seeded-only. (name, type) is the uniqueness unit, so
+			// name alone no longer identifies a row - and a farm's own account
+			// sharing a seeded name must not be picked up here. Lowest id wins,
+			// so the answer is stable rather than whatever the storage engine
+			// happened to return first.
 			$id = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 				$wpdb->prepare(
 					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					"SELECT `id` FROM `{$acc_table}` WHERE `name` = %s LIMIT 1",
+					"SELECT `id` FROM `{$acc_table}` WHERE `name` = %s AND `is_default` = 1 ORDER BY `id` ASC LIMIT 1",
 					$name
 				)
 			);

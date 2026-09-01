@@ -57,6 +57,11 @@ class CategoriesListPage {
 			// The delete handler refuses while transactions still reference it.
 			// Without this entry the refusal was a silent redirect that looked
 			// exactly like a successful delete.
+			'duplicate' => array(
+				'class'   => 'notice-error',
+				'message' => __( 'An category with that name and type already exists, so it was not saved. Give it a different name, or edit the existing one.', 'bluefairy-farmbooks' ),
+			),
+
 			'is_default' => array(
 				'class'   => 'notice-error',
 				'message' => __( 'That category is part of the default set and cannot be deleted.', 'bluefairy-farmbooks' ),
