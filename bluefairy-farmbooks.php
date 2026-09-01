@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 /**
- * Plugin Name:       BlueFairy FarmBooks Lite
- * Plugin URI:        https://bluefairydevelopment.com/plugins/bluefairy-farmbooks-lite/
+ * Plugin Name:       BlueFairy FarmBooks
+ * Plugin URI:        https://bluefairydevelopment.com/plugins/bluefairy-farmbooks/
  * Description:       Farm income and expense tracking aligned to IRS Schedule F. Chart of accounts, transaction ledger, reports, and dashboard — built for small family farms.
  * Version:           1.0.0
  * Requires at least: 6.4
@@ -12,7 +12,7 @@ declare(strict_types=1);
  * Author URI:        https://bluefairydevelopment.com
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       bluefairy-farmbooks-lite
+ * Text Domain:       bluefairy-farmbooks
  * Domain Path:       /languages
  */
 

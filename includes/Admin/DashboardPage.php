@@ -16,7 +16,7 @@ class DashboardPage {
 
 	public function render(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks-lite' ) );
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks' ) );
 		}
 
 		$currency                    = (string) $this->settings->get( 'currency_symbol', '$' );
@@ -29,19 +29,19 @@ class DashboardPage {
 		$added = isset( $_GET['bffb_quick_added'] );
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'FarmBooks Dashboard', 'bluefairy-farmbooks-lite' ); ?></h1>
+			<h1><?php esc_html_e( 'FarmBooks Dashboard', 'bluefairy-farmbooks' ); ?></h1>
 
 			<?php if ( $added ) : ?>
 				<div class="notice notice-success is-dismissible">
-					<p><?php esc_html_e( 'Transaction added.', 'bluefairy-farmbooks-lite' ); ?></p>
+					<p><?php esc_html_e( 'Transaction added.', 'bluefairy-farmbooks' ); ?></p>
 				</div>
 			<?php endif; ?>
 
 			<div class="bffb-widgets" style="display:flex;gap:16px;flex-wrap:wrap;margin:16px 0">
 				<?php
-				$this->render_stat_widget( __( 'YTD Income', 'bluefairy-farmbooks-lite' ), $currency . number_format( $ytd_income, 2 ), '#46b450' );
-				$this->render_stat_widget( __( 'YTD Expenses', 'bluefairy-farmbooks-lite' ), $currency . number_format( $ytd_expenses, 2 ), '#dc3232' );
-				$this->render_stat_widget( __( 'Net', 'bluefairy-farmbooks-lite' ), $currency . number_format( $net, 2 ), $net >= 0.0 ? '#46b450' : '#dc3232' );
+				$this->render_stat_widget( __( 'YTD Income', 'bluefairy-farmbooks' ), $currency . number_format( $ytd_income, 2 ), '#46b450' );
+				$this->render_stat_widget( __( 'YTD Expenses', 'bluefairy-farmbooks' ), $currency . number_format( $ytd_expenses, 2 ), '#dc3232' );
+				$this->render_stat_widget( __( 'Net', 'bluefairy-farmbooks' ), $currency . number_format( $net, 2 ), $net >= 0.0 ? '#46b450' : '#dc3232' );
 				?>
 			</div>
 
@@ -56,9 +56,9 @@ class DashboardPage {
 			?>
 
 			<div style="display:flex;align-items:center;justify-content:space-between;margin-top:24px;margin-bottom:4px">
-				<h2 style="margin:0"><?php esc_html_e( 'Recent Transactions', 'bluefairy-farmbooks-lite' ); ?></h2>
+				<h2 style="margin:0"><?php esc_html_e( 'Recent Transactions', 'bluefairy-farmbooks' ); ?></h2>
 				<button type="button" id="bffb-quick-add-toggle" class="button">
-					<?php esc_html_e( '+ Quick Add', 'bluefairy-farmbooks-lite' ); ?>
+					<?php esc_html_e( '+ Quick Add', 'bluefairy-farmbooks' ); ?>
 				</button>
 			</div>
 
@@ -68,24 +68,24 @@ class DashboardPage {
 					<?php wp_nonce_field( 'bffb_quick_add_transaction' ); ?>
 					<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
 						<label style="display:flex;flex-direction:column;gap:4px">
-							<span style="font-weight:600;font-size:13px"><?php esc_html_e( 'Date', 'bluefairy-farmbooks-lite' ); ?></span>
+							<span style="font-weight:600;font-size:13px"><?php esc_html_e( 'Date', 'bluefairy-farmbooks' ); ?></span>
 							<input type="date" name="bffb_date" value="<?php echo esc_attr( wp_date( 'Y-m-d' ) ); ?>" required style="padding:4px 8px">
 						</label>
 						<label style="display:flex;flex-direction:column;gap:4px">
-							<span style="font-weight:600;font-size:13px"><?php esc_html_e( 'Type', 'bluefairy-farmbooks-lite' ); ?></span>
+							<span style="font-weight:600;font-size:13px"><?php esc_html_e( 'Type', 'bluefairy-farmbooks' ); ?></span>
 							<select name="bffb_type" id="bffb-quick-type" style="padding:4px 8px">
-								<option value="income"><?php esc_html_e( 'Income', 'bluefairy-farmbooks-lite' ); ?></option>
-								<option value="expense"><?php esc_html_e( 'Expense', 'bluefairy-farmbooks-lite' ); ?></option>
+								<option value="income"><?php esc_html_e( 'Income', 'bluefairy-farmbooks' ); ?></option>
+								<option value="expense"><?php esc_html_e( 'Expense', 'bluefairy-farmbooks' ); ?></option>
 							</select>
 						</label>
 						<label style="display:flex;flex-direction:column;gap:4px">
-							<span style="font-weight:600;font-size:13px"><?php esc_html_e( 'Amount', 'bluefairy-farmbooks-lite' ); ?></span>
+							<span style="font-weight:600;font-size:13px"><?php esc_html_e( 'Amount', 'bluefairy-farmbooks' ); ?></span>
 							<input type="number" name="bffb_amount" min="0.01" step="0.01" required placeholder="0.00" style="padding:4px 8px;width:120px">
 						</label>
 						<label style="display:flex;flex-direction:column;gap:4px">
-							<span style="font-weight:600;font-size:13px"><?php esc_html_e( 'Category', 'bluefairy-farmbooks-lite' ); ?></span>
+							<span style="font-weight:600;font-size:13px"><?php esc_html_e( 'Category', 'bluefairy-farmbooks' ); ?></span>
 							<select name="bffb_category_id" id="bffb-quick-category" style="padding:4px 8px">
-								<option value="0"><?php esc_html_e( '— None —', 'bluefairy-farmbooks-lite' ); ?></option>
+								<option value="0"><?php esc_html_e( '— None —', 'bluefairy-farmbooks' ); ?></option>
 								<?php foreach ( $cats['income'] as $cat ) : ?>
 									<option value="<?php echo esc_attr( (string) $cat->id ); ?>" data-type="income">
 										<?php echo esc_html( $cat->name ); ?>
@@ -99,25 +99,25 @@ class DashboardPage {
 							</select>
 						</label>
 						<label style="display:flex;flex-direction:column;gap:4px">
-							<span style="font-weight:600;font-size:13px"><?php esc_html_e( 'Memo', 'bluefairy-farmbooks-lite' ); ?></span>
-							<input type="text" name="bffb_memo" placeholder="<?php esc_attr_e( 'Optional', 'bluefairy-farmbooks-lite' ); ?>" style="padding:4px 8px;width:180px">
+							<span style="font-weight:600;font-size:13px"><?php esc_html_e( 'Memo', 'bluefairy-farmbooks' ); ?></span>
+							<input type="text" name="bffb_memo" placeholder="<?php esc_attr_e( 'Optional', 'bluefairy-farmbooks' ); ?>" style="padding:4px 8px;width:180px">
 						</label>
-						<?php submit_button( __( 'Add', 'bluefairy-farmbooks-lite' ), 'primary', 'submit', false, array( 'style' => 'margin-bottom:0' ) ); ?>
+						<?php submit_button( __( 'Add', 'bluefairy-farmbooks' ), 'primary', 'submit', false, array( 'style' => 'margin-bottom:0' ) ); ?>
 					</div>
 				</form>
 			</div>
 
 			<?php if ( empty( $recent ) ) : ?>
-				<p><?php esc_html_e( 'No transactions yet.', 'bluefairy-farmbooks-lite' ); ?></p>
+				<p><?php esc_html_e( 'No transactions yet.', 'bluefairy-farmbooks' ); ?></p>
 			<?php else : ?>
 				<table class="widefat striped" style="margin-top:4px">
 					<thead>
 						<tr>
-							<th><?php esc_html_e( 'Date', 'bluefairy-farmbooks-lite' ); ?></th>
-							<th><?php esc_html_e( 'Type', 'bluefairy-farmbooks-lite' ); ?></th>
-							<th><?php esc_html_e( 'Category', 'bluefairy-farmbooks-lite' ); ?></th>
-							<th><?php esc_html_e( 'Amount', 'bluefairy-farmbooks-lite' ); ?></th>
-							<th><?php esc_html_e( 'Memo', 'bluefairy-farmbooks-lite' ); ?></th>
+							<th><?php esc_html_e( 'Date', 'bluefairy-farmbooks' ); ?></th>
+							<th><?php esc_html_e( 'Type', 'bluefairy-farmbooks' ); ?></th>
+							<th><?php esc_html_e( 'Category', 'bluefairy-farmbooks' ); ?></th>
+							<th><?php esc_html_e( 'Amount', 'bluefairy-farmbooks' ); ?></th>
+							<th><?php esc_html_e( 'Memo', 'bluefairy-farmbooks' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -126,9 +126,9 @@ class DashboardPage {
 								<td><?php echo esc_html( wp_date( get_option( 'date_format' ), strtotime( (string) $tx->date ) ) ); ?></td>
 								<td>
 									<?php if ( $tx->type === 'income' ) : ?>
-										<span style="color:#46b450;font-weight:600"><?php esc_html_e( 'Income', 'bluefairy-farmbooks-lite' ); ?></span>
+										<span style="color:#46b450;font-weight:600"><?php esc_html_e( 'Income', 'bluefairy-farmbooks' ); ?></span>
 									<?php else : ?>
-										<span style="color:#dc3232;font-weight:600"><?php esc_html_e( 'Expense', 'bluefairy-farmbooks-lite' ); ?></span>
+										<span style="color:#dc3232;font-weight:600"><?php esc_html_e( 'Expense', 'bluefairy-farmbooks' ); ?></span>
 									<?php endif; ?>
 								</td>
 								<td><?php echo isset( $tx->category_name ) ? esc_html( $tx->category_name ) : '—'; ?></td>
@@ -140,7 +140,7 @@ class DashboardPage {
 				</table>
 				<p>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=bffb-transactions' ) ); ?>">
-						<?php esc_html_e( 'View all transactions →', 'bluefairy-farmbooks-lite' ); ?>
+						<?php esc_html_e( 'View all transactions →', 'bluefairy-farmbooks' ); ?>
 					</a>
 				</p>
 			<?php endif; ?>
@@ -151,7 +151,7 @@ class DashboardPage {
 
 	public function handle_quick_add(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Permission denied.', 'bluefairy-farmbooks-lite' ) );
+			wp_die( esc_html__( 'Permission denied.', 'bluefairy-farmbooks' ) );
 		}
 
 		check_admin_referer( 'bffb_quick_add_transaction' );

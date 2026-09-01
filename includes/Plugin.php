@@ -53,7 +53,7 @@ final class Plugin {
 
 	private function load_textdomain(): void {
 		load_plugin_textdomain(
-			'bluefairy-farmbooks-lite',
+			'bluefairy-farmbooks',
 			false,
 			dirname( plugin_basename( BFFB_FILE ) ) . '/languages'
 		);

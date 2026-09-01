@@ -12,7 +12,7 @@ class TransactionEditPage {
 
 	public function render(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks-lite' ) );
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks' ) );
 		}
 
 		global $wpdb;
@@ -38,8 +38,8 @@ class TransactionEditPage {
 		$extra_fields = apply_filters( 'bffb_transaction_form_fields', array(), $transaction );
 
 		$page_title = $id > 0
-			? __( 'Edit Transaction', 'bluefairy-farmbooks-lite' )
-			: __( 'Add Transaction', 'bluefairy-farmbooks-lite' );
+			? __( 'Edit Transaction', 'bluefairy-farmbooks' )
+			: __( 'Add Transaction', 'bluefairy-farmbooks' );
 
 		$date        = $transaction ? $transaction->date : wp_date( 'Y-m-d' );
 		$amount      = $transaction ? $transaction->amount : '';
@@ -62,7 +62,7 @@ class TransactionEditPage {
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row">
-							<label for="bffb_date"><?php esc_html_e( 'Date', 'bluefairy-farmbooks-lite' ); ?> <span aria-hidden="true">*</span></label>
+							<label for="bffb_date"><?php esc_html_e( 'Date', 'bluefairy-farmbooks' ); ?> <span aria-hidden="true">*</span></label>
 						</th>
 						<td>
 							<input type="date" id="bffb_date" name="date" class="regular-text" required
@@ -71,7 +71,7 @@ class TransactionEditPage {
 					</tr>
 					<tr>
 						<th scope="row">
-							<label for="bffb_amount"><?php esc_html_e( 'Amount', 'bluefairy-farmbooks-lite' ); ?> <span aria-hidden="true">*</span></label>
+							<label for="bffb_amount"><?php esc_html_e( 'Amount', 'bluefairy-farmbooks' ); ?> <span aria-hidden="true">*</span></label>
 						</th>
 						<td>
 							<input type="number" id="bffb_amount" name="amount" class="regular-text"
@@ -81,24 +81,24 @@ class TransactionEditPage {
 					</tr>
 					<tr>
 						<th scope="row">
-							<label for="bffb_type"><?php esc_html_e( 'Type', 'bluefairy-farmbooks-lite' ); ?></label>
+							<label for="bffb_type"><?php esc_html_e( 'Type', 'bluefairy-farmbooks' ); ?></label>
 						</th>
 						<td>
 							<select id="bffb_type" name="type">
-								<option value="income"  <?php selected( $type, 'income' ); ?>><?php esc_html_e( 'Income', 'bluefairy-farmbooks-lite' ); ?></option>
-								<option value="expense" <?php selected( $type, 'expense' ); ?>><?php esc_html_e( 'Expense', 'bluefairy-farmbooks-lite' ); ?></option>
+								<option value="income"  <?php selected( $type, 'income' ); ?>><?php esc_html_e( 'Income', 'bluefairy-farmbooks' ); ?></option>
+								<option value="expense" <?php selected( $type, 'expense' ); ?>><?php esc_html_e( 'Expense', 'bluefairy-farmbooks' ); ?></option>
 							</select>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row">
-							<label for="bffb_category_id"><?php esc_html_e( 'Category', 'bluefairy-farmbooks-lite' ); ?></label>
+							<label for="bffb_category_id"><?php esc_html_e( 'Category', 'bluefairy-farmbooks' ); ?></label>
 						</th>
 						<td>
 							<select id="bffb_category_id" name="category_id">
-								<option value=""><?php esc_html_e( '— None —', 'bluefairy-farmbooks-lite' ); ?></option>
+								<option value=""><?php esc_html_e( '— None —', 'bluefairy-farmbooks' ); ?></option>
 								<?php if ( $income_cats ) : ?>
-									<optgroup label="<?php esc_attr_e( 'Income', 'bluefairy-farmbooks-lite' ); ?>">
+									<optgroup label="<?php esc_attr_e( 'Income', 'bluefairy-farmbooks' ); ?>">
 									<?php foreach ( $income_cats as $cat ) : ?>
 										<option value="<?php echo esc_attr( (string) $cat->id ); ?>"
 											<?php selected( (int) $category_id, (int) $cat->id ); ?>>
@@ -108,7 +108,7 @@ class TransactionEditPage {
 									</optgroup>
 								<?php endif; ?>
 								<?php if ( $expense_cats ) : ?>
-									<optgroup label="<?php esc_attr_e( 'Expense', 'bluefairy-farmbooks-lite' ); ?>">
+									<optgroup label="<?php esc_attr_e( 'Expense', 'bluefairy-farmbooks' ); ?>">
 									<?php foreach ( $expense_cats as $cat ) : ?>
 										<option value="<?php echo esc_attr( (string) $cat->id ); ?>"
 											<?php selected( (int) $category_id, (int) $cat->id ); ?>>
@@ -122,7 +122,7 @@ class TransactionEditPage {
 					</tr>
 					<tr>
 						<th scope="row">
-							<label for="bffb_memo"><?php esc_html_e( 'Memo', 'bluefairy-farmbooks-lite' ); ?></label>
+							<label for="bffb_memo"><?php esc_html_e( 'Memo', 'bluefairy-farmbooks' ); ?></label>
 						</th>
 						<td>
 							<textarea id="bffb_memo" name="memo" class="large-text" rows="3"><?php echo esc_textarea( $memo ); ?></textarea>
@@ -145,10 +145,10 @@ class TransactionEditPage {
 				do_action( 'bffb_transaction_extra_fields', $transaction );
 				?>
 
-				<?php submit_button( $id > 0 ? __( 'Update Transaction', 'bluefairy-farmbooks-lite' ) : __( 'Add Transaction', 'bluefairy-farmbooks-lite' ) ); ?>
+				<?php submit_button( $id > 0 ? __( 'Update Transaction', 'bluefairy-farmbooks' ) : __( 'Add Transaction', 'bluefairy-farmbooks' ) ); ?>
 
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=bffb-transactions' ) ); ?>" class="button">
-					<?php esc_html_e( 'Cancel', 'bluefairy-farmbooks-lite' ); ?>
+					<?php esc_html_e( 'Cancel', 'bluefairy-farmbooks' ); ?>
 				</a>
 			</form>
 		</div>
@@ -157,7 +157,7 @@ class TransactionEditPage {
 
 	public function handle_save(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to perform this action.', 'bluefairy-farmbooks-lite' ) );
+			wp_die( esc_html__( 'You do not have permission to perform this action.', 'bluefairy-farmbooks' ) );
 		}
 
 		check_admin_referer( 'bffb_save_transaction', 'bffb_transaction_nonce' );
@@ -224,7 +224,7 @@ class TransactionEditPage {
 
 	public function handle_delete(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to perform this action.', 'bluefairy-farmbooks-lite' ) );
+			wp_die( esc_html__( 'You do not have permission to perform this action.', 'bluefairy-farmbooks' ) );
 		}
 
 		$id = isset( $_GET['id'] ) ? (int) $_GET['id'] : 0;

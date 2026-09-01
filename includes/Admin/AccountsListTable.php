@@ -26,11 +26,11 @@ class AccountsListTable extends \WP_List_Table {
 	/** @return array<string, string> */
 	public function get_columns(): array {
 		return array(
-			'name'            => __( 'Name', 'bluefairy-farmbooks-lite' ),
-			'type'            => __( 'Type', 'bluefairy-farmbooks-lite' ),
-			'schedule_f_line' => __( 'Schedule F Line', 'bluefairy-farmbooks-lite' ),
-			'is_default'      => __( 'Default', 'bluefairy-farmbooks-lite' ),
-			'sort_order'      => __( 'Order', 'bluefairy-farmbooks-lite' ),
+			'name'            => __( 'Name', 'bluefairy-farmbooks' ),
+			'type'            => __( 'Type', 'bluefairy-farmbooks' ),
+			'schedule_f_line' => __( 'Schedule F Line', 'bluefairy-farmbooks' ),
+			'is_default'      => __( 'Default', 'bluefairy-farmbooks' ),
+			'sort_order'      => __( 'Order', 'bluefairy-farmbooks' ),
 		);
 	}
 
@@ -87,7 +87,7 @@ class AccountsListTable extends \WP_List_Table {
 			'schedule_f_line' => $item->schedule_f_line !== null && $item->schedule_f_line !== ''
 									? esc_html( $item->schedule_f_line )
 									: '&mdash;',
-			'is_default'      => $item->is_default ? esc_html__( 'Yes', 'bluefairy-farmbooks-lite' ) : '&mdash;',
+			'is_default'      => $item->is_default ? esc_html__( 'Yes', 'bluefairy-farmbooks' ) : '&mdash;',
 			'sort_order'      => esc_html( (string) $item->sort_order ),
 			default           => '',
 		};

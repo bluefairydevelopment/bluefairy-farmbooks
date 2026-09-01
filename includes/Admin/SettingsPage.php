@@ -21,7 +21,7 @@ class SettingsPage {
 
 	public function render(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks-lite' ) );
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks' ) );
 		}
 
 		$saved = false;
@@ -42,7 +42,7 @@ class SettingsPage {
 		$tabs = apply_filters(
 			'bffb_settings_tabs',
 			array(
-				'general' => __( 'General', 'bluefairy-farmbooks-lite' ),
+				'general' => __( 'General', 'bluefairy-farmbooks' ),
 			)
 		);
 
@@ -57,32 +57,32 @@ class SettingsPage {
 		$currency_symbol   = (string) $this->settings->get( 'currency_symbol', '$' );
 
 		$months = array(
-			'1'  => __( 'January', 'bluefairy-farmbooks-lite' ),
-			'2'  => __( 'February', 'bluefairy-farmbooks-lite' ),
-			'3'  => __( 'March', 'bluefairy-farmbooks-lite' ),
-			'4'  => __( 'April', 'bluefairy-farmbooks-lite' ),
-			'5'  => __( 'May', 'bluefairy-farmbooks-lite' ),
-			'6'  => __( 'June', 'bluefairy-farmbooks-lite' ),
-			'7'  => __( 'July', 'bluefairy-farmbooks-lite' ),
-			'8'  => __( 'August', 'bluefairy-farmbooks-lite' ),
-			'9'  => __( 'September', 'bluefairy-farmbooks-lite' ),
-			'10' => __( 'October', 'bluefairy-farmbooks-lite' ),
-			'11' => __( 'November', 'bluefairy-farmbooks-lite' ),
-			'12' => __( 'December', 'bluefairy-farmbooks-lite' ),
+			'1'  => __( 'January', 'bluefairy-farmbooks' ),
+			'2'  => __( 'February', 'bluefairy-farmbooks' ),
+			'3'  => __( 'March', 'bluefairy-farmbooks' ),
+			'4'  => __( 'April', 'bluefairy-farmbooks' ),
+			'5'  => __( 'May', 'bluefairy-farmbooks' ),
+			'6'  => __( 'June', 'bluefairy-farmbooks' ),
+			'7'  => __( 'July', 'bluefairy-farmbooks' ),
+			'8'  => __( 'August', 'bluefairy-farmbooks' ),
+			'9'  => __( 'September', 'bluefairy-farmbooks' ),
+			'10' => __( 'October', 'bluefairy-farmbooks' ),
+			'11' => __( 'November', 'bluefairy-farmbooks' ),
+			'12' => __( 'December', 'bluefairy-farmbooks' ),
 		);
 
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'FarmBooks Settings', 'bluefairy-farmbooks-lite' ); ?></h1>
+			<h1><?php esc_html_e( 'FarmBooks Settings', 'bluefairy-farmbooks' ); ?></h1>
 
 			<?php if ( $saved ) : ?>
 				<div class="notice notice-success is-dismissible">
-					<p><?php esc_html_e( 'Settings saved.', 'bluefairy-farmbooks-lite' ); ?></p>
+					<p><?php esc_html_e( 'Settings saved.', 'bluefairy-farmbooks' ); ?></p>
 				</div>
 			<?php endif; ?>
 
 			<?php if ( count( $tabs ) > 1 ) : ?>
-			<nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e( 'Settings tabs', 'bluefairy-farmbooks-lite' ); ?>">
+			<nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e( 'Settings tabs', 'bluefairy-farmbooks' ); ?>">
 				<?php foreach ( $tabs as $slug => $label ) : ?>
 					<a
 						href="
@@ -116,7 +116,7 @@ class SettingsPage {
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row">
-							<label for="bffb_farm_name"><?php esc_html_e( 'Farm Name', 'bluefairy-farmbooks-lite' ); ?></label>
+							<label for="bffb_farm_name"><?php esc_html_e( 'Farm Name', 'bluefairy-farmbooks' ); ?></label>
 						</th>
 						<td>
 							<input
@@ -128,13 +128,13 @@ class SettingsPage {
 								maxlength="191"
 							>
 							<p class="description">
-								<?php esc_html_e( 'Your farm name as it should appear on reports.', 'bluefairy-farmbooks-lite' ); ?>
+								<?php esc_html_e( 'Your farm name as it should appear on reports.', 'bluefairy-farmbooks' ); ?>
 							</p>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row">
-							<label for="bffb_fiscal_year_start"><?php esc_html_e( 'Fiscal Year Start', 'bluefairy-farmbooks-lite' ); ?></label>
+							<label for="bffb_fiscal_year_start"><?php esc_html_e( 'Fiscal Year Start', 'bluefairy-farmbooks' ); ?></label>
 						</th>
 						<td>
 							<select id="bffb_fiscal_year_start" name="bffb_fiscal_year_start">
@@ -145,13 +145,13 @@ class SettingsPage {
 								<?php endforeach; ?>
 							</select>
 							<p class="description">
-								<?php esc_html_e( 'The month your fiscal year begins. Most farms use January.', 'bluefairy-farmbooks-lite' ); ?>
+								<?php esc_html_e( 'The month your fiscal year begins. Most farms use January.', 'bluefairy-farmbooks' ); ?>
 							</p>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row">
-							<label for="bffb_tax_year"><?php esc_html_e( 'Tax Year', 'bluefairy-farmbooks-lite' ); ?></label>
+							<label for="bffb_tax_year"><?php esc_html_e( 'Tax Year', 'bluefairy-farmbooks' ); ?></label>
 						</th>
 						<td>
 							<input
@@ -165,13 +165,13 @@ class SettingsPage {
 								step="1"
 							>
 							<p class="description">
-								<?php esc_html_e( 'The default tax year used when filtering transactions and generating reports.', 'bluefairy-farmbooks-lite' ); ?>
+								<?php esc_html_e( 'The default tax year used when filtering transactions and generating reports.', 'bluefairy-farmbooks' ); ?>
 							</p>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row">
-							<label for="bffb_currency_symbol"><?php esc_html_e( 'Currency Symbol', 'bluefairy-farmbooks-lite' ); ?></label>
+							<label for="bffb_currency_symbol"><?php esc_html_e( 'Currency Symbol', 'bluefairy-farmbooks' ); ?></label>
 						</th>
 						<td>
 							<input
@@ -183,7 +183,7 @@ class SettingsPage {
 								maxlength="3"
 							>
 							<p class="description">
-								<?php esc_html_e( 'Currency symbol displayed on reports and the dashboard (e.g. $, £, €). Maximum 3 characters.', 'bluefairy-farmbooks-lite' ); ?>
+								<?php esc_html_e( 'Currency symbol displayed on reports and the dashboard (e.g. $, £, €). Maximum 3 characters.', 'bluefairy-farmbooks' ); ?>
 							</p>
 						</td>
 					</tr>
@@ -191,7 +191,7 @@ class SettingsPage {
 
 				<?php endif; ?>
 
-				<?php submit_button( __( 'Save Settings', 'bluefairy-farmbooks-lite' ) ); ?>
+				<?php submit_button( __( 'Save Settings', 'bluefairy-farmbooks' ) ); ?>
 			</form>
 		</div>
 		<?php

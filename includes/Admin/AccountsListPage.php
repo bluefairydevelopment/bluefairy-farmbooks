@@ -7,7 +7,7 @@ class AccountsListPage {
 
 	public function render(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks-lite' ) );
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks' ) );
 		}
 
 		$this->maybe_show_notice();
@@ -17,7 +17,7 @@ class AccountsListPage {
 
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Chart of Accounts', 'bluefairy-farmbooks-lite' ); ?></h1>
+			<h1><?php esc_html_e( 'Chart of Accounts', 'bluefairy-farmbooks' ); ?></h1>
 
 			<?php do_action( 'bffb_accounts_page_actions' ); ?>
 
@@ -41,15 +41,15 @@ class AccountsListPage {
 		$notices = array(
 			'saved'   => array(
 				'class'   => 'notice-success',
-				'message' => __( 'Account saved.', 'bluefairy-farmbooks-lite' ),
+				'message' => __( 'Account saved.', 'bluefairy-farmbooks' ),
 			),
 			'deleted' => array(
 				'class'   => 'notice-success',
-				'message' => __( 'Account deleted.', 'bluefairy-farmbooks-lite' ),
+				'message' => __( 'Account deleted.', 'bluefairy-farmbooks' ),
 			),
 			'error'   => array(
 				'class'   => 'notice-error',
-				'message' => __( 'Could not save account.', 'bluefairy-farmbooks-lite' ),
+				'message' => __( 'Could not save account.', 'bluefairy-farmbooks' ),
 			),
 		);
 

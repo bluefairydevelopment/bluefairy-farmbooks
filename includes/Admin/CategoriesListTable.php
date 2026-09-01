@@ -44,11 +44,11 @@ class CategoriesListTable extends \WP_List_Table {
 	/** @return array<string, string> */
 	public function get_columns(): array {
 		return array(
-			'name'       => __( 'Name', 'bluefairy-farmbooks-lite' ),
-			'type'       => __( 'Type', 'bluefairy-farmbooks-lite' ),
-			'account'    => __( 'Account', 'bluefairy-farmbooks-lite' ),
-			'is_default' => __( 'Default', 'bluefairy-farmbooks-lite' ),
-			'sort_order' => __( 'Order', 'bluefairy-farmbooks-lite' ),
+			'name'       => __( 'Name', 'bluefairy-farmbooks' ),
+			'type'       => __( 'Type', 'bluefairy-farmbooks' ),
+			'account'    => __( 'Account', 'bluefairy-farmbooks' ),
+			'is_default' => __( 'Default', 'bluefairy-farmbooks' ),
+			'sort_order' => __( 'Order', 'bluefairy-farmbooks' ),
 		);
 	}
 
@@ -105,7 +105,7 @@ class CategoriesListTable extends \WP_List_Table {
 			'account'    => $item->account_id !== null
 								? esc_html( $this->accounts_map[ (int) $item->account_id ] ?? '&mdash;' )
 								: '&mdash;',
-			'is_default' => $item->is_default ? esc_html__( 'Yes', 'bluefairy-farmbooks-lite' ) : '&mdash;',
+			'is_default' => $item->is_default ? esc_html__( 'Yes', 'bluefairy-farmbooks' ) : '&mdash;',
 			'sort_order' => esc_html( (string) $item->sort_order ),
 			default      => '',
 		};

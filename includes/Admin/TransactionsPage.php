@@ -3,23 +3,31 @@ declare(strict_types=1);
 
 namespace BlueFairy\FarmBooks\Admin;
 
+use BlueFairy\FarmBooks\Settings;
+
 class TransactionsPage {
+
+	private Settings $settings;
+
+	public function __construct( Settings $settings ) {
+		$this->settings = $settings;
+	}
 
 	public function render(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks-lite' ) );
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks' ) );
 		}
 
 		$this->maybe_show_notice();
 
-		$table = new TransactionsListTable();
+		$table = new TransactionsListTable( $this->settings );
 		$table->prepare_items();
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Transactions', 'bluefairy-farmbooks-lite' ); ?></h1>
+			<h1><?php esc_html_e( 'Transactions', 'bluefairy-farmbooks' ); ?></h1>
 
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=bffb-transaction-edit' ) ); ?>" class="page-title-action">
-				<?php esc_html_e( 'Add Transaction', 'bluefairy-farmbooks-lite' ); ?>
+				<?php esc_html_e( 'Add Transaction', 'bluefairy-farmbooks' ); ?>
 			</a>
 
 			<?php
@@ -43,9 +51,9 @@ class TransactionsPage {
 		$notice = isset( $_GET['bffb_notice'] ) ? sanitize_key( $_GET['bffb_notice'] ) : '';
 
 		$map = array(
-			'saved'   => array( 'notice-success', __( 'Transaction saved.', 'bluefairy-farmbooks-lite' ) ),
-			'deleted' => array( 'notice-success', __( 'Transaction deleted.', 'bluefairy-farmbooks-lite' ) ),
-			'error'   => array( 'notice-error', __( 'Could not save transaction.', 'bluefairy-farmbooks-lite' ) ),
+			'saved'   => array( 'notice-success', __( 'Transaction saved.', 'bluefairy-farmbooks' ) ),
+			'deleted' => array( 'notice-success', __( 'Transaction deleted.', 'bluefairy-farmbooks' ) ),
+			'error'   => array( 'notice-error', __( 'Could not save transaction.', 'bluefairy-farmbooks' ) ),
 		);
 
 		if ( isset( $map[ $notice ] ) ) {

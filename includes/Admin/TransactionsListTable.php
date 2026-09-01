@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace BlueFairy\FarmBooks\Admin;
 
+use BlueFairy\FarmBooks\Settings;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -16,7 +18,9 @@ class TransactionsListTable extends \WP_List_Table {
 	/** @var array<int, string> */
 	private array $categories_map = array();
 
-	public function __construct() {
+	private string $currency_symbol;
+
+	public function __construct( Settings $settings ) {
 		parent::__construct(
 			array(
 				'singular' => 'transaction',
@@ -24,6 +28,7 @@ class TransactionsListTable extends \WP_List_Table {
 				'ajax'     => false,
 			)
 		);
+		$this->currency_symbol = (string) $settings->get( 'currency_symbol', '$' );
 		$this->load_categories_map();
 	}
 
@@ -44,11 +49,11 @@ class TransactionsListTable extends \WP_List_Table {
 	 */
 	public function get_columns(): array {
 		return array(
-			'date'     => __( 'Date', 'bluefairy-farmbooks-lite' ),
-			'type'     => __( 'Type', 'bluefairy-farmbooks-lite' ),
-			'amount'   => __( 'Amount', 'bluefairy-farmbooks-lite' ),
-			'category' => __( 'Category', 'bluefairy-farmbooks-lite' ),
-			'memo'     => __( 'Memo', 'bluefairy-farmbooks-lite' ),
+			'date'     => __( 'Date', 'bluefairy-farmbooks' ),
+			'type'     => __( 'Type', 'bluefairy-farmbooks' ),
+			'amount'   => __( 'Amount', 'bluefairy-farmbooks' ),
+			'category' => __( 'Category', 'bluefairy-farmbooks' ),
+			'memo'     => __( 'Memo', 'bluefairy-farmbooks' ),
 		);
 	}
 
@@ -80,8 +85,8 @@ class TransactionsListTable extends \WP_List_Table {
 		);
 
 		$actions = array(
-			'edit'   => '<a href="' . esc_url( $edit_url ) . '">' . esc_html__( 'Edit', 'bluefairy-farmbooks-lite' ) . '</a>',
-			'delete' => '<a href="' . esc_url( $delete_url ) . '" class="submitdelete">' . esc_html__( 'Delete', 'bluefairy-farmbooks-lite' ) . '</a>',
+			'edit'   => '<a href="' . esc_url( $edit_url ) . '">' . esc_html__( 'Edit', 'bluefairy-farmbooks' ) . '</a>',
+			'delete' => '<a href="' . esc_url( $delete_url ) . '" class="submitdelete">' . esc_html__( 'Delete', 'bluefairy-farmbooks' ) . '</a>',
 		);
 
 		/**
@@ -103,12 +108,12 @@ class TransactionsListTable extends \WP_List_Table {
 
 	public function column_type( object $item ): string {
 		return 'income' === $item->type
-			? '<span class="bffb-badge bffb-badge--income">' . esc_html__( 'Income', 'bluefairy-farmbooks-lite' ) . '</span>'
-			: '<span class="bffb-badge bffb-badge--expense">' . esc_html__( 'Expense', 'bluefairy-farmbooks-lite' ) . '</span>';
+			? '<span class="bffb-badge bffb-badge--income">' . esc_html__( 'Income', 'bluefairy-farmbooks' ) . '</span>'
+			: '<span class="bffb-badge bffb-badge--expense">' . esc_html__( 'Expense', 'bluefairy-farmbooks' ) . '</span>';
 	}
 
 	public function column_amount( object $item ): string {
-		return esc_html( number_format( (float) $item->amount, 2 ) );
+		return esc_html( $this->currency_symbol . number_format( (float) $item->amount, 2 ) );
 	}
 
 	public function column_category( object $item ): string {
@@ -143,13 +148,13 @@ class TransactionsListTable extends \WP_List_Table {
 		?>
 		<div class="alignleft actions">
 			<select name="filter_type">
-				<option value=""><?php esc_html_e( 'All Types', 'bluefairy-farmbooks-lite' ); ?></option>
-				<option value="income"  <?php selected( $current_type, 'income' ); ?>><?php esc_html_e( 'Income', 'bluefairy-farmbooks-lite' ); ?></option>
-				<option value="expense" <?php selected( $current_type, 'expense' ); ?>><?php esc_html_e( 'Expense', 'bluefairy-farmbooks-lite' ); ?></option>
+				<option value=""><?php esc_html_e( 'All Types', 'bluefairy-farmbooks' ); ?></option>
+				<option value="income"  <?php selected( $current_type, 'income' ); ?>><?php esc_html_e( 'Income', 'bluefairy-farmbooks' ); ?></option>
+				<option value="expense" <?php selected( $current_type, 'expense' ); ?>><?php esc_html_e( 'Expense', 'bluefairy-farmbooks' ); ?></option>
 			</select>
 
 			<select name="filter_category">
-				<option value=""><?php esc_html_e( 'All Categories', 'bluefairy-farmbooks-lite' ); ?></option>
+				<option value=""><?php esc_html_e( 'All Categories', 'bluefairy-farmbooks' ); ?></option>
 				<?php foreach ( $this->categories_map as $cat_id => $cat_name ) : ?>
 					<option value="<?php echo esc_attr( (string) $cat_id ); ?>" <?php selected( $current_category, $cat_id ); ?>>
 						<?php echo esc_html( $cat_name ); ?>
@@ -160,7 +165,7 @@ class TransactionsListTable extends \WP_List_Table {
 			<input type="date" name="date_from" value="<?php echo esc_attr( $date_from ); ?>">
 			<input type="date" name="date_to"   value="<?php echo esc_attr( $date_to ); ?>">
 
-			<?php submit_button( __( 'Filter', 'bluefairy-farmbooks-lite' ), 'secondary', 'filter_action', false ); ?>
+			<?php submit_button( __( 'Filter', 'bluefairy-farmbooks' ), 'secondary', 'filter_action', false ); ?>
 		</div>
 		<?php
 	}

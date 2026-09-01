@@ -18,7 +18,7 @@ Farm income and expense tracking aligned to IRS Schedule F. Built for small fami
 
 ## Installation
 
-1. Upload the `bluefairy-farmbooks-lite` folder to `/wp-content/plugins/`.
+1. Upload the `bluefairy-farmbooks` folder to `/wp-content/plugins/`.
 2. Activate the plugin via **Plugins > Installed Plugins**.
 3. Navigate to **FarmBooks** in the WordPress admin sidebar.
 

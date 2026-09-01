@@ -33,8 +33,8 @@ class AdminMenu {
 
 		// Top-level menu entry.
 		add_menu_page(
-			__( 'FarmBooks', 'bluefairy-farmbooks-lite' ),
-			__( 'FarmBooks', 'bluefairy-farmbooks-lite' ),
+			__( 'FarmBooks', 'bluefairy-farmbooks' ),
+			__( 'FarmBooks', 'bluefairy-farmbooks' ),
 			'manage_options',
 			'bffb-dashboard',
 			array( $dashboard, 'render' ),
@@ -45,8 +45,8 @@ class AdminMenu {
 		// Dashboard — points to the top-level slug.
 		add_submenu_page(
 			'bffb-dashboard',
-			__( 'FarmBooks Dashboard', 'bluefairy-farmbooks-lite' ),
-			__( 'Dashboard', 'bluefairy-farmbooks-lite' ),
+			__( 'FarmBooks Dashboard', 'bluefairy-farmbooks' ),
+			__( 'Dashboard', 'bluefairy-farmbooks' ),
 			'manage_options',
 			'bffb-dashboard',
 			array( $dashboard, 'render' )
@@ -55,18 +55,18 @@ class AdminMenu {
 		// Transactions.
 		add_submenu_page(
 			'bffb-dashboard',
-			__( 'FarmBooks — Transactions', 'bluefairy-farmbooks-lite' ),
-			__( 'Transactions', 'bluefairy-farmbooks-lite' ),
+			__( 'FarmBooks — Transactions', 'bluefairy-farmbooks' ),
+			__( 'Transactions', 'bluefairy-farmbooks' ),
 			'manage_options',
 			'bffb-transactions',
-			array( new TransactionsPage(), 'render' )
+			array( new TransactionsPage( $this->settings ), 'render' )
 		);
 
 		// Hidden add/edit page — empty parent keeps it off the sidebar.
 		add_submenu_page(
 			'',
-			__( 'FarmBooks — Transaction', 'bluefairy-farmbooks-lite' ),
-			__( 'Transaction', 'bluefairy-farmbooks-lite' ),
+			__( 'FarmBooks — Transaction', 'bluefairy-farmbooks' ),
+			__( 'Transaction', 'bluefairy-farmbooks' ),
 			'manage_options',
 			'bffb-transaction-edit',
 			array( $this->transaction_edit, 'render' )
@@ -75,8 +75,8 @@ class AdminMenu {
 		// Accounts (Chart of Accounts).
 		add_submenu_page(
 			'bffb-dashboard',
-			__( 'FarmBooks — Accounts', 'bluefairy-farmbooks-lite' ),
-			__( 'Accounts', 'bluefairy-farmbooks-lite' ),
+			__( 'FarmBooks — Accounts', 'bluefairy-farmbooks' ),
+			__( 'Accounts', 'bluefairy-farmbooks' ),
 			'manage_options',
 			'bffb-accounts',
 			array( new AccountsListPage(), 'render' )
@@ -85,8 +85,8 @@ class AdminMenu {
 		// Categories.
 		add_submenu_page(
 			'bffb-dashboard',
-			__( 'FarmBooks — Categories', 'bluefairy-farmbooks-lite' ),
-			__( 'Categories', 'bluefairy-farmbooks-lite' ),
+			__( 'FarmBooks — Categories', 'bluefairy-farmbooks' ),
+			__( 'Categories', 'bluefairy-farmbooks' ),
 			'manage_options',
 			'bffb-categories',
 			array( new CategoriesListPage(), 'render' )
@@ -95,8 +95,8 @@ class AdminMenu {
 		// Reports.
 		add_submenu_page(
 			'bffb-dashboard',
-			__( 'FarmBooks — Reports', 'bluefairy-farmbooks-lite' ),
-			__( 'Reports', 'bluefairy-farmbooks-lite' ),
+			__( 'FarmBooks — Reports', 'bluefairy-farmbooks' ),
+			__( 'Reports', 'bluefairy-farmbooks' ),
 			'manage_options',
 			'bffb-reports',
 			array( new ReportsPage(), 'render' )
@@ -105,8 +105,8 @@ class AdminMenu {
 		// Settings.
 		add_submenu_page(
 			'bffb-dashboard',
-			__( 'FarmBooks — Settings', 'bluefairy-farmbooks-lite' ),
-			__( 'Settings', 'bluefairy-farmbooks-lite' ),
+			__( 'FarmBooks — Settings', 'bluefairy-farmbooks' ),
+			__( 'Settings', 'bluefairy-farmbooks' ),
 			'manage_options',
 			'bffb-settings',
 			array( new SettingsPage( $this->settings ), 'render' )

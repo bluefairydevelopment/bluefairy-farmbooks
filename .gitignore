@@ -3,3 +3,4 @@ vendor/
 .DS_Store
 .phpunit.cache/
 .phpstan/
+.cache/

@@ -17,7 +17,7 @@ class ReportsPage {
 
 	public function render(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks-lite' ) );
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'bluefairy-farmbooks' ) );
 		}
 
 		$filters = $this->parse_filters();
@@ -32,9 +32,9 @@ class ReportsPage {
 		$reports = apply_filters(
 			'bffb_reports_list',
 			array(
-				'ytd'     => __( 'YTD Summary', 'bluefairy-farmbooks-lite' ),
-				'income'  => __( 'Income List', 'bluefairy-farmbooks-lite' ),
-				'expense' => __( 'Expense List', 'bluefairy-farmbooks-lite' ),
+				'ytd'     => __( 'YTD Summary', 'bluefairy-farmbooks' ),
+				'income'  => __( 'Income List', 'bluefairy-farmbooks' ),
+				'expense' => __( 'Expense List', 'bluefairy-farmbooks' ),
 			)
 		);
 
@@ -46,7 +46,7 @@ class ReportsPage {
 
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Reports', 'bluefairy-farmbooks-lite' ); ?></h1>
+			<h1><?php esc_html_e( 'Reports', 'bluefairy-farmbooks' ); ?></h1>
 
 			<nav class="nav-tab-wrapper bffb-report-tabs" style="margin-bottom:0">
 				<?php foreach ( $reports as $slug => $label ) : ?>
@@ -77,7 +77,7 @@ class ReportsPage {
 					<input type="hidden" name="bffb_report" value="<?php echo esc_attr( $active ); ?>">
 
 					<label>
-						<?php esc_html_e( 'Year', 'bluefairy-farmbooks-lite' ); ?><br>
+						<?php esc_html_e( 'Year', 'bluefairy-farmbooks' ); ?><br>
 						<select name="year">
 							<?php
 							$current_year = (int) wp_date( 'Y' );
@@ -92,22 +92,22 @@ class ReportsPage {
 
 					<?php if ( in_array( $active, array( 'income', 'expense' ), true ) ) : ?>
 						<label>
-							<?php esc_html_e( 'From', 'bluefairy-farmbooks-lite' ); ?><br>
+							<?php esc_html_e( 'From', 'bluefairy-farmbooks' ); ?><br>
 							<input type="date" name="date_from" value="<?php echo esc_attr( $filters['date_from'] ); ?>">
 						</label>
 
 						<label>
-							<?php esc_html_e( 'To', 'bluefairy-farmbooks-lite' ); ?><br>
+							<?php esc_html_e( 'To', 'bluefairy-farmbooks' ); ?><br>
 							<input type="date" name="date_to" value="<?php echo esc_attr( $filters['date_to'] ); ?>">
 						</label>
 
 						<label>
-							<?php esc_html_e( 'Category', 'bluefairy-farmbooks-lite' ); ?><br>
+							<?php esc_html_e( 'Category', 'bluefairy-farmbooks' ); ?><br>
 							<?php $this->render_category_dropdown( $active === 'expense' ? 'expense' : 'income', $filters['category_id'] ); ?>
 						</label>
 					<?php endif; ?>
 
-					<?php submit_button( __( 'Apply', 'bluefairy-farmbooks-lite' ), 'secondary small', '', false ); ?>
+					<?php submit_button( __( 'Apply', 'bluefairy-farmbooks' ), 'secondary small', '', false ); ?>
 				</form>
 
 				<?php
@@ -183,21 +183,21 @@ class ReportsPage {
 		<h2 style="margin-top:0">
 			<?php
 			// translators: %d is the tax year.
-			printf( esc_html__( 'Year-to-Date Summary — %d', 'bluefairy-farmbooks-lite' ), (int) $year );
+			printf( esc_html__( 'Year-to-Date Summary — %d', 'bluefairy-farmbooks' ), (int) $year );
 			?>
 		</h2>
 		<table class="widefat striped" style="max-width:480px">
 			<tbody>
 				<tr>
-					<th scope="row"><?php esc_html_e( 'Total Income', 'bluefairy-farmbooks-lite' ); ?></th>
+					<th scope="row"><?php esc_html_e( 'Total Income', 'bluefairy-farmbooks' ); ?></th>
 					<td style="text-align:right"><?php echo esc_html( '$' . number_format( $income, 2 ) ); ?></td>
 				</tr>
 				<tr>
-					<th scope="row"><?php esc_html_e( 'Total Expenses', 'bluefairy-farmbooks-lite' ); ?></th>
+					<th scope="row"><?php esc_html_e( 'Total Expenses', 'bluefairy-farmbooks' ); ?></th>
 					<td style="text-align:right"><?php echo esc_html( '$' . number_format( $expenses, 2 ) ); ?></td>
 				</tr>
 				<tr>
-					<th scope="row" style="border-top:2px solid #ddd"><?php esc_html_e( 'Net Income / (Loss)', 'bluefairy-farmbooks-lite' ); ?></th>
+					<th scope="row" style="border-top:2px solid #ddd"><?php esc_html_e( 'Net Income / (Loss)', 'bluefairy-farmbooks' ); ?></th>
 					<td style="text-align:right;font-weight:bold;border-top:2px solid #ddd;color:<?php echo $net >= 0 ? '#2e7d32' : '#c62828'; ?>">
 						<?php echo esc_html( ( $net < 0 ? '(' : '' ) . '$' . number_format( abs( $net ), 2 ) . ( $net < 0 ? ')' : '' ) ); ?>
 					</td>
@@ -217,8 +217,8 @@ class ReportsPage {
 		$t     = $wpdb->prefix . 'bffb_transactions';
 		$c     = $wpdb->prefix . 'bffb_categories';
 		$label = $type === 'income'
-			? __( 'Income List', 'bluefairy-farmbooks-lite' )
-			: __( 'Expense List', 'bluefairy-farmbooks-lite' );
+			? __( 'Income List', 'bluefairy-farmbooks' )
+			: __( 'Expense List', 'bluefairy-farmbooks' );
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$paged    = max( 1, (int) wp_unslash( $_GET['paged'] ?? '1' ) );
@@ -253,17 +253,17 @@ class ReportsPage {
 		echo '<h2 style="margin-top:0">' . esc_html( $label ) . '</h2>';
 
 		if ( empty( $rows ) ) {
-			echo '<p>' . esc_html__( 'No transactions found for the selected period.', 'bluefairy-farmbooks-lite' ) . '</p>';
+			echo '<p>' . esc_html__( 'No transactions found for the selected period.', 'bluefairy-farmbooks' ) . '</p>';
 			return;
 		}
 		?>
 		<table class="widefat striped">
 			<thead>
 				<tr>
-					<th><?php esc_html_e( 'Date', 'bluefairy-farmbooks-lite' ); ?></th>
-					<th><?php esc_html_e( 'Category', 'bluefairy-farmbooks-lite' ); ?></th>
-					<th><?php esc_html_e( 'Memo', 'bluefairy-farmbooks-lite' ); ?></th>
-					<th style="text-align:right"><?php esc_html_e( 'Amount', 'bluefairy-farmbooks-lite' ); ?></th>
+					<th><?php esc_html_e( 'Date', 'bluefairy-farmbooks' ); ?></th>
+					<th><?php esc_html_e( 'Category', 'bluefairy-farmbooks' ); ?></th>
+					<th><?php esc_html_e( 'Memo', 'bluefairy-farmbooks' ); ?></th>
+					<th style="text-align:right"><?php esc_html_e( 'Amount', 'bluefairy-farmbooks' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -278,7 +278,7 @@ class ReportsPage {
 			</tbody>
 			<tfoot>
 				<tr>
-					<th colspan="3" style="text-align:left"><?php esc_html_e( 'Total', 'bluefairy-farmbooks-lite' ); ?></th>
+					<th colspan="3" style="text-align:left"><?php esc_html_e( 'Total', 'bluefairy-farmbooks' ); ?></th>
 					<th style="text-align:right"><?php echo esc_html( '$' . number_format( $total_amount, 2 ) ); ?></th>
 				</tr>
 			</tfoot>
@@ -321,7 +321,7 @@ class ReportsPage {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$cats = $wpdb->get_results( $wpdb->prepare( "SELECT id, name FROM `{$c}` WHERE type=%s ORDER BY sort_order, name", $type ) );
 
-		echo '<select name="category_id"><option value="0">' . esc_html__( 'All Categories', 'bluefairy-farmbooks-lite' ) . '</option>';
+		echo '<select name="category_id"><option value="0">' . esc_html__( 'All Categories', 'bluefairy-farmbooks' ) . '</option>';
 		foreach ( $cats as $cat ) {
 			echo '<option value="' . esc_attr( (string) $cat->id ) . '" ' . selected( $selected, (int) $cat->id, false ) . '>' . esc_html( $cat->name ) . '</option>';
 		}
