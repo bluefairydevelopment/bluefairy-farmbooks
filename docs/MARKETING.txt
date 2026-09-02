@@ -1,0 +1,59 @@
+BlueFairy FarmBooks — Marketing Content
+=========================================
+
+
+3-SENTENCE SUMMARY
+------------------
+
+BlueFairy FarmBooks is a free, self-hosted WordPress accounting plugin for US farm operations, covering income and expense tracking against a farm chart of accounts with categories mapped to Schedule F lines. Everything stays in your own WordPress database — no third-party service, no per-transaction fee, no upload of your farm's finances to anyone else. Payroll, vendors and 1099-NEC, budgets, receipt attachments and the full report set are in the paid add-on, FarmBooks Pro.
+
+
+CSS CLASS PREFIX
+----------------
+
+bffb
+
+
+HTML LONG DESCRIPTION
+---------------------
+
+<h2>Farm bookkeeping that stays on your own site</h2>
+
+<p>FarmBooks is a WordPress accounting plugin written for the way farms actually keep books. It tracks income and expenses against a chart of accounts built for agriculture, maps every category to a Schedule F line so tax time is a report rather than a reconstruction, and keeps all of it in your own database.</p>
+
+<h3>What the free plugin gives you</h3>
+
+<ul>
+  <li><strong>Income and expense ledger</strong> — every transaction against an account and a category, with quick-add from the dashboard.</li>
+  <li><strong>Farm chart of accounts</strong> — seeded on activation, editable, with each account carrying its Schedule F line.</li>
+  <li><strong>Reports</strong> — Year-to-Date Summary, Income List and Expense List, filtered by year.</li>
+  <li><strong>Multisite aware</strong> — tables are created and removed on every site of a network.</li>
+  <li><strong>Your data stays yours</strong> — uninstalling keeps your books unless you explicitly opt in to removal.</li>
+</ul>
+
+<h3>What FarmBooks Pro adds</h3>
+
+<p>Pro is an add-on: it runs alongside this plugin rather than replacing it.</p>
+
+<ul>
+  <li><strong>Farm payroll</strong> — hourly, salary and piece-rate, with W-2s and pay stubs.</li>
+  <li><strong>Withholding tables</strong> — federal (IRS Publication 15-T) plus California, Iowa, Illinois, Kansas, Minnesota, Nebraska and Texas, checked against the publications on every release.</li>
+  <li><strong>Vendors and 1099-NEC</strong> — contractor records with encrypted EINs and year-end filing output.</li>
+  <li><strong>Budgets</strong> — per-category annual budgets and a Budget vs Actual report.</li>
+  <li><strong>The full report set</strong> — Profit &amp; Loss, Cash Flow, Schedule F and Payroll Summary, as PDF and CSV.</li>
+  <li><strong>Receipts and WooCommerce sync</strong> — attach scanned receipts, and turn completed orders into income transactions.</li>
+</ul>
+
+<p><a href="/product/farmbooks/">Get FarmBooks Pro — $129/yr</a></p>
+
+
+NOTES
+-----
+
+This is the FREE half of a free/Pro pair. It shares the hub page (/farmbooks/),
+the FAQ page (/faq-farmbooks/) and the features guide PDF with FarmBooks Pro —
+see Step 11c of prep-wp-plugin-for-sale.md. It has its own WooCommerce product
+at /product/bluefairy-farmbooks/ (price 0) so every CTA can offer the free
+download beside the Pro purchase.
+
+It must NOT carry the licence-manager meta: only the paid half issues keys.
