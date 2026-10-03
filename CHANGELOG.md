@@ -14,6 +14,15 @@ Versioning follows Major.Minor.Patch: major = architecture shift, minor = new fe
   parameter #1" in the PHP log on each load (seen on the rig's web log while
   certifying FarmBooks Pro 1.2.0). `AdminMenu::add_hidden_page()` sets each
   screen's title on its `load-{hook}` action, before the header.
+- **Schedule F Part I lines.** Custom hire income was seeded on line 8 and
+  other income on line 9; on the 2025 form they are lines 7 and 8, and line 9
+  is gross income. New installs seed 7 and 8; schema 4 moves the seeded rows
+  (by name, safe to repeat) and, on an upgrade only, a farm's own income
+  accounts on 8 and 9 (custom hire first, so nothing moves twice).
+  FarmBooks Pro 1.2.0 reads the new lines and requires this release.
+- readme: the chart of accounts is not read-only (accounts and categories are
+  edited here since 1.0.1), the list has no search box, and the plugin is not
+  installed from a search in Add New.
 - `docs/FarmBooksFeaturesGuide.pdf` was the 1.0.0 guide, naming the plugins by
   their old slugs; it is now the current guide (built by the Pro plugin's
   generator, which covers both).

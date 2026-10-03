@@ -3,7 +3,7 @@
 ## Phase 1 (Current)
 
 ### Chart of Accounts
-- 33 default Schedule F accounts seeded on activation (income lines 1–9, expense lines 10–32).
+- 33 default Schedule F accounts seeded on activation (income lines 1–8, expense lines 10–32; line 9 is gross income).
 - Types: income, expense, asset, liability, equity.
 - Each account stores the IRS Schedule F line number for report mapping.
 - Accounts can be marked as default (`is_default = 1`); defaults are never overwritten on re-activation.

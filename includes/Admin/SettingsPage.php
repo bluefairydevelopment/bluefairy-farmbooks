@@ -285,7 +285,7 @@ class SettingsPage {
 								step="1"
 							>
 							<p class="description">
-								<?php esc_html_e( 'The default tax year used when filtering transactions and generating reports.', 'bluefairy-farmbooks' ); ?>
+								<?php esc_html_e( 'The year FarmBooks Pro\'s dashboard budget bars show. Reports and the transaction list have their own year filters.', 'bluefairy-farmbooks' ); ?>
 							</p>
 						</td>
 					</tr>
@@ -303,7 +303,7 @@ class SettingsPage {
 								maxlength="3"
 							>
 							<p class="description">
-								<?php esc_html_e( 'Currency symbol displayed on reports and the dashboard (e.g. $, £, €). Maximum 3 characters.', 'bluefairy-farmbooks' ); ?>
+								<?php esc_html_e( 'Currency symbol shown on the dashboard and the transaction list (e.g. $, £, €). Reports and exports are in US dollars, as Schedule F is. Maximum 3 characters.', 'bluefairy-farmbooks' ); ?>
 							</p>
 						</td>
 					</tr>

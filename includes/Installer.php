@@ -23,7 +23,7 @@ class Installer {
 	 * Pro's own troubleshooting notes told operators to read it as the base
 	 * schema version.
 	 */
-	private const DB_VERSION    = '3';
+	private const DB_VERSION    = '4';
 	private const VERSION_OPTION  = 'bffb_db_version';
 	private const ATTEMPTS_OPTION         = 'bffb_install_attempts';
 	private const ATTEMPTS_VERSION_OPTION = 'bffb_install_attempts_for';
@@ -251,6 +251,45 @@ class Installer {
 		if ( $from < 3 ) {
 			$this->dedupe_and_lock_seeded_tables();
 		}
+
+		if ( $from < 4 ) {
+			$this->move_part_i_income_lines( $from > 0 );
+		}
+	}
+
+	/**
+	 * Schedule F Part I: custom hire income is line 7 and other income line
+	 * 8; line 9 is gross income. Until 1.0.2 the chart seeded them on 8 and 9
+	 * and Pro's report labelled 8 "Custom hire" and 9 "Other farm income", so
+	 * both landed one line too low on the prepared form.
+	 *
+	 * The seeded rows are moved by name, which is safe to run any number of
+	 * times (once moved, neither matches). A farm's OWN income accounts on 8
+	 * or 9 were chosen against the old labels, so they move the same way —
+	 * but only on a real upgrade ($existing_install: the version option was
+	 * there), never on a fresh install, whose accounts already carry the new
+	 * numbers. Custom hire moves first, so nothing is moved twice.
+	 */
+	private function move_part_i_income_lines( bool $existing_install ): void {
+		global $wpdb;
+
+		$accounts = $wpdb->prefix . 'bffb_accounts';
+		$own      = $existing_install ? ' OR is_default = 0' : '';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE `{$accounts}` SET schedule_f_line = '7' WHERE type = 'income' AND schedule_f_line = '8' AND ( ( is_default = 1 AND name = %s ){$own} )",
+				'Custom hire income'
+			)
+		);
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE `{$accounts}` SET schedule_f_line = '8' WHERE type = 'income' AND schedule_f_line = '9' AND ( ( is_default = 1 AND name = %s ){$own} )",
+				'Other farm income'
+			)
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**
@@ -612,8 +651,10 @@ class Installer {
 			array( 'Agricultural program payments', 'income', '4a' ),
 			array( 'CCC loans', 'income', '5a' ),
 			array( 'Crop insurance and disaster payments', 'income', '6a' ),
-			array( 'Custom hire income', 'income', '8' ),
-			array( 'Other farm income', 'income', '9' ),
+			// Schedule F (2025) Part I: line 7 is custom hire income, line 8
+			// other income, line 9 gross income. Seeded on 8 and 9 until 1.0.2.
+			array( 'Custom hire income', 'income', '7' ),
+			array( 'Other farm income', 'income', '8' ),
 		);
 
 		$expense_accounts = array(

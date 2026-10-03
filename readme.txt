@@ -18,10 +18,10 @@ FarmBooks is designed for farmers who want to stop wrestling with spreadsheets o
 
 **Included in FarmBooks:**
 
-* Chart of accounts with 33 default Schedule F accounts (income lines 1–9, expense lines 10–32)
-* 10 default farm categories linked to their accounts
+* Chart of accounts with 33 default Schedule F accounts (income lines 1–8, expense lines 10–32; line 9 is gross income) — add, edit and delete your own; the defaults can be edited but not deleted
+* 10 default farm categories linked to their accounts — add, edit and delete your own
 * Transaction ledger — date, amount, type (income/expense), category, memo
-* WP_List_Table with search, filters, and column sorting
+* Transaction list with filters and column sorting
 * Reports: income list, expense list, and YTD totals
 * Dashboard: YTD summary widgets + 10 most-recent transactions + quick-add form
 * Settings: farm name, fiscal year start, tax year, currency symbol
@@ -32,12 +32,6 @@ FarmBooks is designed for farmers who want to stop wrestling with spreadsheets o
 FarmBooks exposes a set of `do_action` and `apply_filters` hooks so developers can add vendors, custom categories, budgets, payroll, or reports without patching the core plugin. The full hook list is documented in the plugin's `docs/FEATURES.md`.
 
 == Installation ==
-
-**Automatic install:**
-
-1. In WordPress admin go to **Plugins → Add New**.
-2. Search for "BlueFairy FarmBooks".
-3. Click **Install Now**, then **Activate**.
 
 **Zip upload:**
 
@@ -69,15 +63,15 @@ Yes. Deactivation preserves all data. To remove all FarmBooks data from the data
 
 = Can I import historical transactions? =
 
-Not in the version. General CSV import is on the roadmap. If you sell farm products through WooCommerce, the FarmBooks Pro add-on can bulk-import all completed historical orders as income transactions.
+Not in this version. If you sell farm products through WooCommerce, the FarmBooks Pro add-on can bulk-import all completed historical orders as income transactions.
 
 = Can I customise the chart of accounts? =
 
-the free plugin ships a fixed Schedule F–aligned chart of accounts (read-only). Custom accounts and categories are available in the Pro add-on.
+Yes. Add, edit and delete your own accounts and categories under **FarmBooks → Accounts** and **FarmBooks → Categories**, each with its Schedule F line. The seeded defaults can be edited but not deleted, and an account or category still used by transactions cannot be deleted.
 
 = Does it support multiple farms? =
 
-The current version tracks a single farm operation. Multi-farm support is planned for v2.0 of the Pro add-on.
+It tracks a single farm operation per WordPress site.
 
 = Where can I get help? =
 
@@ -86,7 +80,7 @@ Support requests are handled at [bluefairydevelopment.com](https://bluefairydeve
 == Screenshots ==
 
 1. Dashboard — YTD income, expenses, net, and most-recent transactions.
-2. Transaction ledger with search, filters, and column sorting.
+2. Transaction ledger with filters and column sorting.
 3. Add / edit transaction form.
 4. Reports — expense list, income list, YTD totals.
 
@@ -94,7 +88,8 @@ Support requests are handled at [bluefairydevelopment.com](https://bluefairydeve
 
 = 1.0.2 =
 * Fixed: opening the Transaction add/edit, Edit Category or Edit Account screen logged a PHP deprecation notice ("strip_tags(): Passing null") on every visit, because WordPress finds no title for a screen that is not in the menu. Each now sets its own title.
-* Docs: the bundled features guide is the current one (it described 1.0.0, under the plugins' old names).
+* Fixed: custom hire income was on Schedule F line 8 and other income on line 9. On the form (2025) they are lines 7 and 8; line 9 is gross income. The update moves the default accounts, and your own income accounts on 8 or 9, to the right lines. FarmBooks Pro 1.2.0's Schedule F report reads the new lines.
+* Docs: the bundled features guide is the current one (it described 1.0.0, under the plugins' old names). The readme no longer says the chart of accounts is read-only, that the list has a search box, or that the plugin installs from a search in Add New.
 
 = 1.0.1 =
 * Fixed: saving Settings from a tab added by another plugin wiped farm name, EIN, fiscal year start, tax year and currency.
@@ -125,7 +120,7 @@ Support requests are handled at [bluefairydevelopment.com](https://bluefairydeve
 == Upgrade Notice ==
 
 = 1.0.2 =
-Stops a PHP deprecation notice being logged on every visit to the add/edit screens. No data changes.
+Moves Schedule F custom hire income to line 7 and other income to line 8 (your own income accounts on lines 8 and 9 too), and stops a PHP deprecation notice on the add/edit screens. Update before FarmBooks Pro 1.2.0.
 
 = 1.0.0 =
 Initial release.

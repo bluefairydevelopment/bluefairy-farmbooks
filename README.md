@@ -10,7 +10,7 @@ Farm income and expense tracking aligned to IRS Schedule F. Built for small fami
 
 ## Features (Phase 1)
 
-- Chart of accounts with 33 default Schedule F accounts (income lines 1–9, expense lines 10–32)
+- Chart of accounts with 33 default Schedule F accounts (income lines 1–8, expense lines 10–32; line 9 is gross income)
 - 10 default farm categories linked to their accounts
 - Settings: farm name, fiscal year start, tax year, currency symbol
 - Admin menu: Dashboard, Transactions, Reports, Settings

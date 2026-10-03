@@ -51,3 +51,43 @@ function add_submenu_page( $parent, $page_title, $menu_title, $capability, $slug
 
 	return ( '' === $parent ? 'admin_page_' : 'farmbooks_page_' ) . $slug;
 }
+
+$GLOBALS['bffb_test_options'] = [];
+
+function get_option( $name, $default = false ) {
+	return array_key_exists( $name, $GLOBALS['bffb_test_options'] ) ? $GLOBALS['bffb_test_options'][ $name ] : $default;
+}
+
+/**
+ * A $wpdb that records every write, answers COUNT(*) with 0, and prepares
+ * as core does for %s and %d.
+ */
+final class BFFB_Test_Wpdb {
+	public string $prefix = 'wp_';
+	public array $queries = [];
+	public array $inserts = [];
+
+	public function prepare( string $query, ...$args ): string {
+		$args = 1 === count( $args ) && is_array( $args[0] ) ? $args[0] : $args;
+
+		return vsprintf( str_replace( [ '%s', '%d' ], [ "'%s'", '%d' ], $query ), $args );
+	}
+
+	public function query( string $query ) {
+		$this->queries[] = $query;
+
+		return 0;
+	}
+
+	public function get_var( string $query ) {
+		$this->queries[] = $query;
+
+		return 0;
+	}
+
+	public function insert( $table, $data, $format = null ) {
+		$this->inserts[] = [ $table, $data ];
+
+		return 1;
+	}
+}
