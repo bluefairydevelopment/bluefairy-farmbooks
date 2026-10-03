@@ -4,7 +4,7 @@ Tags: farm accounting, schedule f, income expense, agriculture, bookkeeping
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,6 +92,10 @@ Support requests are handled at [bluefairydevelopment.com](https://bluefairydeve
 
 == Changelog ==
 
+= 1.0.2 =
+* Fixed: opening the Transaction add/edit, Edit Category or Edit Account screen logged a PHP deprecation notice ("strip_tags(): Passing null") on every visit, because WordPress finds no title for a screen that is not in the menu. Each now sets its own title.
+* Docs: the bundled features guide is the current one (it described 1.0.0, under the plugins' old names).
+
 = 1.0.1 =
 * Fixed: saving Settings from a tab added by another plugin wiped farm name, EIN, fiscal year start, tax year and currency.
 * Fixed: the Settings form now redirects after saving, so a reload no longer re-submits it.
@@ -119,6 +123,9 @@ Support requests are handled at [bluefairydevelopment.com](https://bluefairydeve
 * Extension hooks for the FarmBooks Pro add-on.
 
 == Upgrade Notice ==
+
+= 1.0.2 =
+Stops a PHP deprecation notice being logged on every visit to the add/edit screens. No data changes.
 
 = 1.0.0 =
 Initial release.

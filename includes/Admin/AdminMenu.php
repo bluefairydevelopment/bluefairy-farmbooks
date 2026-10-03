@@ -53,6 +53,29 @@ class AdminMenu {
 	}
 
 	/**
+	 * A screen reached by link, not listed in the menu (empty parent).
+	 *
+	 * WordPress finds no title for a page with no parent, so admin-header.php
+	 * called strip_tags( null ) on every load of one: a PHP 8.1+ deprecation
+	 * in the log on each visit. The page's own title is set on its
+	 * load-{hook} action, which runs before the header. ($hook is false for a
+	 * user without the capability; the action is then on "load-", which
+	 * nothing fires.)
+	 *
+	 * @param callable $render
+	 */
+	private function add_hidden_page( string $page_title, string $menu_title, string $slug, $render ): void {
+		$hook = add_submenu_page( '', $page_title, $menu_title, 'manage_options', $slug, $render );
+
+		add_action(
+			'load-' . $hook,
+			static function () use ( $page_title ): void {
+				$GLOBALS['title'] = $page_title; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- core reads $title in admin-header.php.
+			}
+		);
+	}
+
+	/**
 	 * Register the top-level FarmBooks menu and the free plugin's sub-pages.
 	 */
 	public function bffb_add_menu(): void {
@@ -90,11 +113,9 @@ class AdminMenu {
 		);
 
 		// Hidden add/edit page — empty parent keeps it off the sidebar.
-		add_submenu_page(
-			'',
+		$this->add_hidden_page(
 			__( 'FarmBooks — Transaction', 'bluefairy-farmbooks' ),
 			__( 'Transaction', 'bluefairy-farmbooks' ),
-			'manage_options',
 			'bffb-transaction-edit',
 			array( $this->transaction_edit, 'render' )
 		);
@@ -141,20 +162,16 @@ class AdminMenu {
 
 		// The two hidden edit screens for the base's own entities. Registered
 		// with an empty parent so they stay off the sidebar.
-		add_submenu_page(
-			'',
+		$this->add_hidden_page(
 			__( 'FarmBooks — Edit Category', 'bluefairy-farmbooks' ),
 			__( 'Edit Category', 'bluefairy-farmbooks' ),
-			'manage_options',
 			'bffb-category-edit',
 			array( $this->category_edit, 'render' )
 		);
 
-		add_submenu_page(
-			'',
+		$this->add_hidden_page(
 			__( 'FarmBooks — Edit Account', 'bluefairy-farmbooks' ),
 			__( 'Edit Account', 'bluefairy-farmbooks' ),
-			'manage_options',
 			'bffb-account-edit',
 			array( $this->account_edit, 'render' )
 		);

@@ -4,6 +4,25 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows Major.Minor.Patch: major = architecture shift, minor = new feature, patch = bug/security fix.
 
+## [1.0.2] — 2026-10-03
+
+### Fixed
+- **A PHP deprecation logged on every visit to a hidden screen.** Transaction
+  add/edit, Edit Category and Edit Account are registered with an empty parent
+  (reached by link, not listed in the menu), so WordPress found no title for
+  them and `admin-header.php` called `strip_tags( null )` — "Passing null to
+  parameter #1" in the PHP log on each load (seen on the rig's web log while
+  certifying FarmBooks Pro 1.2.0). `AdminMenu::add_hidden_page()` sets each
+  screen's title on its `load-{hook}` action, before the header.
+- `docs/FarmBooksFeaturesGuide.pdf` was the 1.0.0 guide, naming the plugins by
+  their old slugs; it is now the current guide (built by the Pro plugin's
+  generator, which covers both).
+
+### Tests
+- A unit suite for the first time (`tests/`, PHPUnit with WordPress stubs):
+  the hidden screens and their titles, each test seen red against a
+  deliberate break.
+
 ## [1.0.1] — 2026-08-31
 
 ### Fixed
