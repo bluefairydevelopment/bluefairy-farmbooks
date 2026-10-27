@@ -1,5 +1,6 @@
 === BlueFairy FarmBooks ===
 Contributors: bluefairydevelopment
+Donate link: https://ko-fi.com/bluefairydevelopment
 Tags: farm accounting, schedule f, income expense, agriculture, bookkeeping
 Requires at least: 6.4
 Tested up to: 7.1
