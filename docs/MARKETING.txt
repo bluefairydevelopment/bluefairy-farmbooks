@@ -44,7 +44,7 @@ HTML LONG DESCRIPTION
   <li><strong>Receipts and WooCommerce sync</strong> — attach scanned receipts, and turn completed orders into income transactions.</li>
 </ul>
 
-<p><a href="/product/farmbooks/">Get FarmBooks Pro — $129/yr</a></p>
+<p><a href="/product/farmbooks/">Get FarmBooks Pro — $25</a></p>
 
 
 NOTES
