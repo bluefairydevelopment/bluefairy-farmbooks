@@ -185,6 +185,10 @@ class AdminMenu {
 		do_action( 'bffb_admin_menu_items' );
 	}
 
+	/**
+	 * @param array<string, string> $actions Row action links keyed by action name.
+	 * @return array<string, string>
+	 */
 	public function category_row_actions( array $actions, object $item ): array {
 		$actions['edit'] = '<a href="'
 			. esc_url( admin_url( 'admin.php?page=bffb-category-edit&id=' . (int) $item->id ) )
@@ -203,6 +207,10 @@ class AdminMenu {
 		return $actions;
 	}
 
+	/**
+	 * @param array<string, string> $actions Row action links keyed by action name.
+	 * @return array<string, string>
+	 */
 	public function account_row_actions( array $actions, object $item ): array {
 		$actions['edit'] = '<a href="'
 			. esc_url( admin_url( 'admin.php?page=bffb-account-edit&id=' . (int) $item->id ) )
