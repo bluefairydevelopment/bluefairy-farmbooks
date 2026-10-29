@@ -105,6 +105,8 @@ class Settings {
 	 * permanently unreadable through get() — silently, because
 	 * array_key_exists() on the truncated cache just falls through to the coded
 	 * default. Raised, and it now says so in the log if it is ever reached.
+	 *
+	 * @return array<string, mixed>
 	 */
 	private function load_all(): array {
 		$blog_id = function_exists( 'get_current_blog_id' ) ? get_current_blog_id() : 0;

@@ -1,14 +1,18 @@
 parameters:
     level: 6
     paths:
+        - bluefairy-farmbooks.php
         - includes
-    scanFiles:
-        - bluefairy-farmbooks-lite.php
+        - uninstall.php
     bootstrapFiles:
         - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+        - phpstan-bootstrap.php
     excludePaths:
         - vendor/
     treatPhpDocTypesAsCertain: false
+    # DB_NAME comes from wp-config.php; its value differs per install.
+    dynamicConstantNames:
+        - DB_NAME
 
 includes:
     - vendor/szepeviktor/phpstan-wordpress/extension.neon

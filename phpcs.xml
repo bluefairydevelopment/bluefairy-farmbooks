@@ -2,7 +2,7 @@
 <ruleset name="BlueFairy FarmBooks Lite">
     <description>PHPCS ruleset for BlueFairy FarmBooks Lite</description>
 
-    <file>bluefairy-farmbooks-lite.php</file>
+    <file>bluefairy-farmbooks.php</file>
     <file>uninstall.php</file>
     <file>includes/</file>
 
